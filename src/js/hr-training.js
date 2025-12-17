@@ -18,9 +18,6 @@ let currentSegmentIndex = 0;
 let segmentStartTime = null;
 let workoutInterval = null;
 
-// Load saved workouts on page load
-loadSavedWorkouts();
-
 // Workout Builder Functions
 function addSegment() {
     const speed = parseFloat(document.getElementById('segmentSpeed').value);
@@ -234,14 +231,36 @@ function finishWorkout() {
 // Make functions global for onclick handlers
 window.removeSegment = removeSegment;
 
-// Event Listeners
-document.getElementById('addSegment').addEventListener('click', addSegment);
-document.getElementById('saveWorkout').addEventListener('click', saveWorkout);
-document.getElementById('loadWorkout').addEventListener('click', loadWorkout);
-document.getElementById('deleteWorkout').addEventListener('click', deleteWorkout);
-document.getElementById('startWorkout').addEventListener('click', startWorkout);
-document.getElementById('pauseWorkout').addEventListener('click', pauseWorkout);
-document.getElementById('stopWorkout').addEventListener('click', stopWorkout);
+// Initialize when DOM is loaded
+document.addEventListener('DOMContentLoaded', function() {
+    // Load saved workouts on page load
+    loadSavedWorkouts();
+    
+    // Event Listeners
+    document.getElementById('addSegment').addEventListener('click', addSegment);
+    document.getElementById('saveWorkout').addEventListener('click', saveWorkout);
+    document.getElementById('loadWorkout').addEventListener('click', loadWorkout);
+    document.getElementById('deleteWorkout').addEventListener('click', deleteWorkout);
+    document.getElementById('startWorkout').addEventListener('click', startWorkout);
+    document.getElementById('pauseWorkout').addEventListener('click', pauseWorkout);
+    document.getElementById('stopWorkout').addEventListener('click', stopWorkout);
+    
+    document.querySelector('#toggleConnection').addEventListener('click', async function() {
+        if(!treadmillControl.connected()) {
+            document.querySelector('#toggleConnection').textContent = 'Disconnect';
+
+            await treadmillControl.connect();
+            await treadmillCommands.requestControl();
+        
+            monitor.setDeviceName(treadmillControl.device.name);
+        }
+        else {
+            document.querySelector('#toggleConnection').textContent = 'Connect';
+            treadmillControl.disconnect();
+            monitor.setDeviceName('Not connected');
+        }
+    });
+});
 
 treadmillControl.addDataHandler(treadmillData => {
     monitor.setCurrentHeartRate(treadmillData.hr);
@@ -257,18 +276,3 @@ treadmillControl.addDataHandler(treadmillData => {
     }
 });
 
-document.querySelector('#toggleConnection').addEventListener('click', async function() {
-    if(!treadmillControl.connected()) {
-        document.querySelector('#toggleConnection').textContent = 'Disconnect';
-
-        await treadmillControl.connect();
-        await treadmillCommands.requestControl();
-    
-        monitor.setDeviceName(treadmillControl.device.name);
-    }
-    else {
-        document.querySelector('#toggleConnection').textContent = 'Connect';
-        treadmillControl.disconnect();
-        monitor.setDeviceName('Not connected');
-    }
-});
