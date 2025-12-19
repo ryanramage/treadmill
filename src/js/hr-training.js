@@ -536,6 +536,19 @@ treadmillControl.addDataHandler(treadmillData => {
     monitor.setIncline(treadmillData.inclination);
     monitor.setCalories(treadmillData.kcal);
     
+    // Feed data to heart rate training system
+    if (treadmillData.hr && treadmillData.hr > 0) {
+        hrTraining.handleHeartRateChanged(treadmillData.hr);
+    }
+    
+    // Update current speed and incline in training system
+    if (treadmillData.speed !== undefined) {
+        hrTraining.setCurrentSpeed(treadmillData.speed);
+    }
+    if (treadmillData.inclination !== undefined) {
+        hrTraining.setCurrentIncline(treadmillData.inclination);
+    }
+    
     // Update current speed display in running interface
     if (document.getElementById('runningInterface').style.display !== 'none') {
         document.getElementById('currentSpeed').textContent = `${treadmillData.speed.toFixed(1)} km/h`;
