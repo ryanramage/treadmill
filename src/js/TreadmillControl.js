@@ -258,17 +258,27 @@ export class TreadmillControl {
         const targetSettingStatus = (flags & (1 << 14)) !== 0;
         const machineStatusFlag = (flags & (1 << 13)) !== 0;
         
-        // Determine status based on multiple factors
+        // Determine status based on multiple factors with hysteresis to prevent jitter
         if (isSpeedZero) {
             machineStatus = 'stopped';
-        } else if (isSpeedVeryLow && this.lastMachineStatus === 'stopped') {
-            // Treadmill starting up from stopped state
+        } else if (this.lastMachineStatus === 'stopped' && speed > 0.1) {
+            // Treadmill starting up from stopped state - any speed > 0.1 means running
             machineStatus = 'running';
-        } else if (hasRecentSpeedDrop && speed < 2.0) {
-            // Speed dropped recently and is now very low - likely stopping
+        } else if (this.lastMachineStatus === 'running' && speed > 0.5) {
+            // Stay running if we were running and speed is reasonable
+            machineStatus = 'running';
+        } else if (this.lastMachineStatus === 'running' && hasRecentSpeedDrop && speed < 1.0) {
+            // Only go to stopping if we were running, had a speed drop, and are now very slow
             machineStatus = 'stopping';
+        } else if (this.lastMachineStatus === 'stopping' && speed < 0.5) {
+            // From stopping to stopped only when very slow
+            machineStatus = 'stopped';
         } else if (speed > 0.1) {
+            // Default to running for any reasonable speed
             machineStatus = 'running';
+        } else {
+            // Keep previous status if unclear
+            machineStatus = this.lastMachineStatus || 'unknown';
         }
         
         result.machineStatus = machineStatus;

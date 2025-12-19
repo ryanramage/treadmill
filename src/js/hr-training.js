@@ -657,11 +657,29 @@ treadmillControl.addStatusChangeHandler(statusChange => {
         if (statusChange.currentStatus === 'running' && 
             (statusChange.previousStatus === 'stopped' || statusChange.previousStatus === 'unknown')) {
             // Treadmill started - resume workout timer if paused
-            console.log('Treadmill started - resuming workout timer');
+            console.log('Treadmill started - resuming workout timer and program control');
             if (!workoutInterval) {
                 workoutInterval = setInterval(updateWorkoutDisplay, 1000);
                 document.getElementById('pauseWorkout').textContent = 'Pause';
-                programControlMode = 'manual'; // User started manually
+            }
+            
+            // Automatically resume program control when treadmill starts
+            if (currentSegmentIndex < currentWorkoutSegments.length) {
+                const segment = currentWorkoutSegments[currentSegmentIndex];
+                if (segment.type === 'manual') {
+                    // Auto-resume program control
+                    resumeProgramControl().catch(error => {
+                        console.error('Failed to auto-resume program control:', error);
+                        // Fall back to manual mode if auto-resume fails
+                        programControlMode = 'manual';
+                        updateControlModeDisplay();
+                    });
+                } else {
+                    programControlMode = 'auto';
+                    updateControlModeDisplay();
+                }
+            } else {
+                programControlMode = 'manual';
                 updateControlModeDisplay();
             }
         } 
@@ -783,6 +801,12 @@ function showManualAdjustmentNotification(actualSpeed, targetSpeed) {
 
 // Function to show status change notifications
 function showTreadmillStatusNotification(statusChange) {
+    // Don't show notifications for jittery stopping state changes
+    if (statusChange.currentStatus === 'stopping' || 
+        (statusChange.previousStatus === 'stopping' && statusChange.currentStatus === 'running')) {
+        return;
+    }
+    
     const notification = document.createElement('div');
     notification.className = 'treadmill-notification';
     notification.style.cssText = `
@@ -799,7 +823,7 @@ function showTreadmillStatusNotification(statusChange) {
     
     let message = '';
     if (statusChange.currentStatus === 'running') {
-        message = '▶️ Treadmill started';
+        message = '▶️ Treadmill started - resuming program';
         notification.style.background = '#4CAF50';
     } else if (statusChange.currentStatus === 'stopped') {
         if (statusChange.reason === 'data_timeout') {
@@ -807,9 +831,6 @@ function showTreadmillStatusNotification(statusChange) {
         } else {
             message = '⏸️ Treadmill stopped';
         }
-        notification.style.background = '#FF9800';
-    } else if (statusChange.currentStatus === 'stopping') {
-        message = '⏸️ Treadmill stopping';
         notification.style.background = '#FF9800';
     } else if (statusChange.currentStatus === 'program-resumed') {
         message = '🤖 Program control resumed';
