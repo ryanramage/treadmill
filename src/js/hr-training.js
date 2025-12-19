@@ -18,6 +18,13 @@ let currentSegmentIndex = 0;
 let segmentStartTime = null;
 let workoutInterval = null;
 
+// Program control state
+let programControlMode = 'auto'; // 'auto', 'manual', 'paused'
+let targetSpeed = 0;
+let targetIncline = 0;
+let lastProgramSpeed = 0;
+let speedDeviationThreshold = 0.3; // km/h tolerance
+
 // Initialize when DOM is loaded
 document.addEventListener('DOMContentLoaded', function() {
     
@@ -405,6 +412,9 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // TODO: Start heart rate training with adjustment parameters
             // This will be implemented in the next phase
+            programControlMode = 'auto';
+            targetSpeed = 0; // Will be set by HR training
+            targetIncline = 0;
         } else {
             // Manual segment - set fixed values
             document.getElementById('targetSpeed').textContent = `Target: ${segment.speed.toFixed(1)} km/h`;
@@ -414,12 +424,22 @@ document.addEventListener('DOMContentLoaded', function() {
                 try {
                     await treadmillCommands.setSpeed(segment.speed);
                     await treadmillCommands.setInclination(segment.incline);
+                    
+                    programControlMode = 'auto';
+                    targetSpeed = segment.speed;
+                    targetIncline = segment.incline;
+                    lastProgramSpeed = segment.speed;
                 } catch (error) {
                     console.error('Failed to set treadmill parameters:', error);
                     alert('Failed to set treadmill speed/incline: ' + error.message);
+                    programControlMode = 'manual';
                 }
+            } else {
+                programControlMode = 'manual';
             }
         }
+        
+        updateControlModeDisplay();
     }
 
     function updateWorkoutDisplay() {
@@ -485,6 +505,11 @@ document.addEventListener('DOMContentLoaded', function() {
         // Reset pause button text
         document.getElementById('pauseWorkout').textContent = 'Pause';
         
+        // Reset program control state
+        programControlMode = 'auto';
+        targetSpeed = 0;
+        targetIncline = 0;
+        
         // Stop treadmill if connected
         if (treadmillControl.connected()) {
             try {
@@ -513,6 +538,7 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('startWorkout').addEventListener('click', startWorkout);
     document.getElementById('pauseWorkout').addEventListener('click', pauseWorkout);
     document.getElementById('stopWorkout').addEventListener('click', stopWorkout);
+    document.getElementById('resumeProgramControl').addEventListener('click', resumeProgramControl);
     
     // Training mode toggle
     document.querySelectorAll('input[name="trainingMode"]').forEach(radio => {
@@ -605,6 +631,9 @@ treadmillControl.addDataHandler(treadmillData => {
     // Update current speed display in running interface
     if (document.getElementById('runningInterface').style.display !== 'none') {
         document.getElementById('currentSpeed').textContent = `${treadmillData.speed.toFixed(1)} km/h`;
+        
+        // Check for manual speed adjustments during workout
+        checkForManualAdjustments(treadmillData);
     }
 });
 
@@ -616,21 +645,24 @@ treadmillControl.addStatusChangeHandler(statusChange => {
     if (document.getElementById('runningInterface').style.display !== 'none') {
         
         if (statusChange.currentStatus === 'running' && statusChange.previousStatus === 'stopped') {
-            // User pressed start on treadmill
-            console.log('Treadmill started by user - resuming workout if paused');
+            // Treadmill started - resume workout timer if paused
+            console.log('Treadmill started - resuming workout timer');
             if (!workoutInterval) {
-                // Resume workout if it was paused
                 workoutInterval = setInterval(updateWorkoutDisplay, 1000);
                 document.getElementById('pauseWorkout').textContent = 'Pause';
+                programControlMode = 'manual'; // User started manually
+                updateControlModeDisplay();
             }
         } 
         else if (statusChange.currentStatus === 'stopped' && statusChange.previousStatus === 'running') {
-            // User pressed stop on treadmill
-            console.log('Treadmill stopped by user - pausing workout');
+            // Treadmill stopped - pause workout timer
+            console.log('Treadmill stopped - pausing workout timer');
             if (workoutInterval) {
                 clearInterval(workoutInterval);
                 workoutInterval = null;
                 document.getElementById('pauseWorkout').textContent = 'Resume';
+                programControlMode = 'paused';
+                updateControlModeDisplay();
             }
         }
         
@@ -638,6 +670,104 @@ treadmillControl.addStatusChangeHandler(statusChange => {
         showTreadmillStatusNotification(statusChange);
     }
 });
+
+// Check for manual speed adjustments by user
+function checkForManualAdjustments(treadmillData) {
+    if (programControlMode === 'auto' && targetSpeed > 0) {
+        const speedDifference = Math.abs(treadmillData.speed - targetSpeed);
+        
+        if (speedDifference > speedDeviationThreshold) {
+            // User manually adjusted speed
+            console.log(`Manual speed adjustment detected: target ${targetSpeed}, actual ${treadmillData.speed}`);
+            programControlMode = 'manual';
+            updateControlModeDisplay();
+            showManualAdjustmentNotification(treadmillData.speed, targetSpeed);
+        }
+    }
+}
+
+// Update the control mode display
+function updateControlModeDisplay() {
+    const modeElement = document.getElementById('controlMode');
+    const resumeButton = document.getElementById('resumeProgramControl');
+    
+    if (modeElement) {
+        switch (programControlMode) {
+            case 'auto':
+                modeElement.textContent = '🤖 Program Control';
+                modeElement.className = 'control-mode auto';
+                if (resumeButton) resumeButton.style.display = 'none';
+                break;
+            case 'manual':
+                modeElement.textContent = '👤 Manual Control';
+                modeElement.className = 'control-mode manual';
+                if (resumeButton) resumeButton.style.display = 'inline-block';
+                break;
+            case 'paused':
+                modeElement.textContent = '⏸️ Paused';
+                modeElement.className = 'control-mode paused';
+                if (resumeButton) resumeButton.style.display = 'none';
+                break;
+        }
+    }
+}
+
+// Resume program control
+async function resumeProgramControl() {
+    if (currentSegmentIndex < currentWorkoutSegments.length) {
+        const segment = currentWorkoutSegments[currentSegmentIndex];
+        
+        if (segment.type === 'manual') {
+            try {
+                await treadmillCommands.setSpeed(segment.speed);
+                await treadmillCommands.setInclination(segment.incline);
+                
+                programControlMode = 'auto';
+                targetSpeed = segment.speed;
+                targetIncline = segment.incline;
+                updateControlModeDisplay();
+                
+                showTreadmillStatusNotification({
+                    currentStatus: 'program-resumed',
+                    speed: segment.speed
+                });
+            } catch (error) {
+                console.error('Failed to resume program control:', error);
+                alert('Failed to resume program control: ' + error.message);
+            }
+        }
+    }
+}
+
+// Show manual adjustment notification
+function showManualAdjustmentNotification(actualSpeed, targetSpeed) {
+    const notification = document.createElement('div');
+    notification.className = 'treadmill-notification manual-adjustment';
+    notification.style.cssText = `
+        position: fixed;
+        top: 70px;
+        right: 20px;
+        background: #FF9800;
+        color: white;
+        padding: 10px 20px;
+        border-radius: 5px;
+        z-index: 1000;
+        animation: slideIn 0.3s ease-out;
+    `;
+    
+    notification.innerHTML = `
+        <div>👤 Manual adjustment detected</div>
+        <div style="font-size: 12px;">Target: ${targetSpeed.toFixed(1)} km/h → Actual: ${actualSpeed.toFixed(1)} km/h</div>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        if (notification.parentNode) {
+            notification.parentNode.removeChild(notification);
+        }
+    }, 4000);
+}
 
 // Function to show status change notifications
 function showTreadmillStatusNotification(statusChange) {
@@ -662,6 +792,9 @@ function showTreadmillStatusNotification(statusChange) {
     } else if (statusChange.currentStatus === 'stopped') {
         message = '⏸️ Treadmill stopped';
         notification.style.background = '#FF9800';
+    } else if (statusChange.currentStatus === 'program-resumed') {
+        message = '🤖 Program control resumed';
+        notification.style.background = '#2196F3';
     }
     
     notification.textContent = message;

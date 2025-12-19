@@ -324,3 +324,50 @@ body {
 .treadmill-notification {
     animation: slideIn 0.3s ease-out;
 }
+
+.control-mode-section {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.control-mode {
+    padding: 5px 10px;
+    border-radius: 15px;
+    font-size: 14px;
+    font-weight: bold;
+}
+
+.control-mode.auto {
+    background: #4CAF50;
+    color: white;
+}
+
+.control-mode.manual {
+    background: #FF9800;
+    color: white;
+}
+
+.control-mode.paused {
+    background: #9E9E9E;
+    color: white;
+}
+
+#resumeProgramControl {
+    padding: 5px 10px;
+    background: #2196F3;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+#resumeProgramControl:hover {
+    background: #1976D2;
+}
+
+.manual-adjustment {
+    border-left: 4px solid #FF5722;
+}

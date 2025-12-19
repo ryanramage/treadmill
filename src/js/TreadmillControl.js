@@ -158,19 +158,10 @@ export class TreadmillControl {
             result.elapsedTime = elapsedTime;
         }
 
-        // Extract machine status from flags
-        // Bit 0: More data available
-        // Bit 13: Machine status (0 = stopped/idle, 1 = in use/running)
-        // Bit 14: Target setting status
-        const machineStatusBit = (flags & (1 << 13)) !== 0;
-        const targetSettingBit = (flags & (1 << 14)) !== 0;
-        
-        // Determine machine status
+        // Simple speed-based status detection for manual mode treadmills
         let machineStatus = 'unknown';
-        if (speed > 0) {
+        if (speed > 0.1) { // Small threshold to avoid noise
             machineStatus = 'running';
-        } else if (machineStatusBit) {
-            machineStatus = 'ready'; // Machine is on but not moving
         } else {
             machineStatus = 'stopped';
         }
