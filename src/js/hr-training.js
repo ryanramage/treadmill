@@ -25,25 +25,130 @@ let targetIncline = 0;
 let lastProgramSpeed = 0;
 let speedDeviationThreshold = 0.3; // km/h tolerance
 
+// Speed conversion utilities
+function kmhToMinPerKm(kmh) {
+    if (kmh <= 0) return 0;
+    return 60 / kmh;
+}
+
+function minPerKmToKmh(minPerKm) {
+    if (minPerKm <= 0) return 0;
+    return 60 / minPerKm;
+}
+
+function formatMinPerKm(minPerKm) {
+    const minutes = Math.floor(minPerKm);
+    const seconds = Math.round((minPerKm - minutes) * 60);
+    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+}
+
+// Workout functions that need to be accessible globally
+function updateWorkoutDisplay() {
+    if (currentSegmentIndex >= currentWorkoutSegments.length) {
+        finishWorkout();
+        return;
+    }
+    
+    const segment = currentWorkoutSegments[currentSegmentIndex];
+    const elapsed = (Date.now() - segmentStartTime) / 1000;
+    const remaining = Math.max(0, segment.duration - elapsed);
+    
+    // Update segment info
+    document.getElementById('currentSegmentInfo').textContent = 
+        `Segment ${currentSegmentIndex + 1}/${currentWorkoutSegments.length}`;
+    
+    const minutes = Math.floor(remaining / 60);
+    const seconds = Math.floor(remaining % 60);
+    document.getElementById('segmentTimeRemaining').textContent = 
+        `${minutes}:${seconds.toString().padStart(2, '0')} remaining`;
+    
+    // Update progress bar
+    const progress = Math.min(100, (elapsed / segment.duration) * 100);
+    document.getElementById('segmentProgress').style.width = `${progress}%`;
+    
+    // Check if segment is complete
+    if (elapsed >= segment.duration) {
+        currentSegmentIndex++;
+        if (currentSegmentIndex < currentWorkoutSegments.length) {
+            startSegment(currentWorkoutSegments[currentSegmentIndex]).catch(error => {
+                console.error('Failed to start next segment:', error);
+            });
+        }
+    }
+}
+
+async function startSegment(segment) {
+    segmentStartTime = Date.now();
+    
+    if (segment.type === 'heartRate') {
+        // Set target heart rate display
+        document.getElementById('targetSpeed').textContent = `Target HR: ${segment.targetHeartRate} bpm`;
+        
+        // TODO: Start heart rate training with adjustment parameters
+        // This will be implemented in the next phase
+        programControlMode = 'auto';
+        targetSpeed = 0; // Will be set by HR training
+        targetIncline = 0;
+    } else {
+        // Manual segment - set fixed values
+        document.getElementById('targetSpeed').textContent = `Target: ${segment.speed.toFixed(1)} km/h`;
+        
+        // Set speed and incline on treadmill if connected
+        if (treadmillControl.connected()) {
+            try {
+                await treadmillCommands.setSpeed(segment.speed);
+                await treadmillCommands.setInclination(segment.incline);
+                
+                programControlMode = 'auto';
+                targetSpeed = segment.speed;
+                targetIncline = segment.incline;
+                lastProgramSpeed = segment.speed;
+            } catch (error) {
+                console.error('Failed to set treadmill parameters:', error);
+                alert('Failed to set treadmill speed/incline: ' + error.message);
+                programControlMode = 'manual';
+            }
+        } else {
+            programControlMode = 'manual';
+        }
+    }
+    
+    updateControlModeDisplay();
+}
+
+async function finishWorkout() {
+    // Clear workout interval
+    if (workoutInterval) {
+        clearInterval(workoutInterval);
+        workoutInterval = null;
+    }
+    
+    // Show workout builder, hide running interface
+    document.getElementById('workoutBuilder').style.display = 'block';
+    document.getElementById('runningInterface').style.display = 'none';
+    
+    // Reset pause button text
+    document.getElementById('pauseWorkout').textContent = 'Pause';
+    
+    // Reset program control state
+    programControlMode = 'auto';
+    targetSpeed = 0;
+    targetIncline = 0;
+    
+    // Stop treadmill if connected
+    if (treadmillControl.connected()) {
+        try {
+            await treadmillCommands.setSpeed(0);
+        } catch (error) {
+            console.error('Failed to stop treadmill:', error);
+        }
+    }
+    
+    alert('Workout completed!');
+}
+
 // Initialize when DOM is loaded
 document.addEventListener('DOMContentLoaded', function() {
-    
-    // Speed conversion utilities
-    function kmhToMinPerKm(kmh) {
-        if (kmh <= 0) return 0;
-        return 60 / kmh;
-    }
-    
-    function minPerKmToKmh(minPerKm) {
-        if (minPerKm <= 0) return 0;
-        return 60 / minPerKm;
-    }
-    
-    function formatMinPerKm(minPerKm) {
-        const minutes = Math.floor(minPerKm);
-        const seconds = Math.round((minPerKm - minutes) * 60);
-        return `${minutes}:${seconds.toString().padStart(2, '0')}`;
-    }
     
     // UI Mode switching
     function toggleTrainingMode() {
@@ -403,78 +508,6 @@ document.addEventListener('DOMContentLoaded', function() {
         workoutInterval = setInterval(updateWorkoutDisplay, 1000);
     }
 
-    async function startSegment(segment) {
-        segmentStartTime = Date.now();
-        
-        if (segment.type === 'heartRate') {
-            // Set target heart rate display
-            document.getElementById('targetSpeed').textContent = `Target HR: ${segment.targetHeartRate} bpm`;
-            
-            // TODO: Start heart rate training with adjustment parameters
-            // This will be implemented in the next phase
-            programControlMode = 'auto';
-            targetSpeed = 0; // Will be set by HR training
-            targetIncline = 0;
-        } else {
-            // Manual segment - set fixed values
-            document.getElementById('targetSpeed').textContent = `Target: ${segment.speed.toFixed(1)} km/h`;
-            
-            // Set speed and incline on treadmill if connected
-            if (treadmillControl.connected()) {
-                try {
-                    await treadmillCommands.setSpeed(segment.speed);
-                    await treadmillCommands.setInclination(segment.incline);
-                    
-                    programControlMode = 'auto';
-                    targetSpeed = segment.speed;
-                    targetIncline = segment.incline;
-                    lastProgramSpeed = segment.speed;
-                } catch (error) {
-                    console.error('Failed to set treadmill parameters:', error);
-                    alert('Failed to set treadmill speed/incline: ' + error.message);
-                    programControlMode = 'manual';
-                }
-            } else {
-                programControlMode = 'manual';
-            }
-        }
-        
-        updateControlModeDisplay();
-    }
-
-    function updateWorkoutDisplay() {
-        if (currentSegmentIndex >= currentWorkoutSegments.length) {
-            finishWorkout();
-            return;
-        }
-        
-        const segment = currentWorkoutSegments[currentSegmentIndex];
-        const elapsed = (Date.now() - segmentStartTime) / 1000;
-        const remaining = Math.max(0, segment.duration - elapsed);
-        
-        // Update segment info
-        document.getElementById('currentSegmentInfo').textContent = 
-            `Segment ${currentSegmentIndex + 1}/${currentWorkoutSegments.length}`;
-        
-        const minutes = Math.floor(remaining / 60);
-        const seconds = Math.floor(remaining % 60);
-        document.getElementById('segmentTimeRemaining').textContent = 
-            `${minutes}:${seconds.toString().padStart(2, '0')} remaining`;
-        
-        // Update progress bar
-        const progress = Math.min(100, (elapsed / segment.duration) * 100);
-        document.getElementById('segmentProgress').style.width = `${progress}%`;
-        
-        // Check if segment is complete
-        if (elapsed >= segment.duration) {
-            currentSegmentIndex++;
-            if (currentSegmentIndex < currentWorkoutSegments.length) {
-                startSegment(currentWorkoutSegments[currentSegmentIndex]).catch(error => {
-                    console.error('Failed to start next segment:', error);
-                });
-            }
-        }
-    }
 
     function pauseWorkout() {
         if (workoutInterval) {
@@ -491,36 +524,6 @@ document.addEventListener('DOMContentLoaded', function() {
         await finishWorkout();
     }
 
-    async function finishWorkout() {
-        // Clear workout interval
-        if (workoutInterval) {
-            clearInterval(workoutInterval);
-            workoutInterval = null;
-        }
-        
-        // Show workout builder, hide running interface
-        document.getElementById('workoutBuilder').style.display = 'block';
-        document.getElementById('runningInterface').style.display = 'none';
-        
-        // Reset pause button text
-        document.getElementById('pauseWorkout').textContent = 'Pause';
-        
-        // Reset program control state
-        programControlMode = 'auto';
-        targetSpeed = 0;
-        targetIncline = 0;
-        
-        // Stop treadmill if connected
-        if (treadmillControl.connected()) {
-            try {
-                await treadmillCommands.setSpeed(0);
-            } catch (error) {
-                console.error('Failed to stop treadmill:', error);
-            }
-        }
-        
-        alert('Workout completed!');
-    }
     
     // Load saved workouts on page load
     loadSavedWorkouts();
