@@ -93,17 +93,29 @@ async function startSegment(segment) {
         hrTraining.setSpeedLimits(segment.speedLimits.min, segment.speedLimits.max);
         hrTraining.setInclineLimits(segment.inclineLimits.min, segment.inclineLimits.max);
         hrTraining.setAdjustmentMethods(segment.adjustments.speed, segment.adjustments.incline);
+        hrTraining.setSegmentDuration(segment.duration);
         
-        // Set initial speed if we're adjusting speed and treadmill is connected
-        if (segment.adjustments.speed && treadmillControl.connected()) {
+        // Smooth transition from previous segment
+        if (treadmillControl.connected()) {
             try {
-                // Start at minimum speed to begin heart rate training
-                const initialSpeed = Math.max(segment.speedLimits.min, 3.0); // Start at least 3 km/h
-                await treadmillCommands.setSpeed(initialSpeed);
+                let initialSpeed = hrTraining.currentSpeed;
+                let initialIncline = hrTraining.currentIncline;
+                
+                // If this is the first segment or we don't have current values, use sensible defaults
+                if (initialSpeed === 0 || currentSegmentIndex === 0) {
+                    initialSpeed = Math.max(segment.speedLimits.min, 3.0);
+                }
+                if (initialIncline === 0 && currentSegmentIndex === 0) {
+                    initialIncline = segment.inclineLimits.min;
+                }
+                
+                // Update HR training with current values
                 hrTraining.setCurrentSpeed(initialSpeed);
-                console.log(`Set initial speed to ${initialSpeed} km/h for HR training`);
+                hrTraining.setCurrentIncline(initialIncline);
+                
+                console.log(`Starting HR segment from current position: ${initialSpeed.toFixed(1)} km/h, ${initialIncline.toFixed(1)}%`);
             } catch (error) {
-                console.error('Failed to set initial speed for HR training:', error);
+                console.error('Failed to initialize HR training position:', error);
             }
         }
         
@@ -118,18 +130,35 @@ async function startSegment(segment) {
         console.log(`Adjustments - Speed: ${segment.adjustments.speed}, Incline: ${segment.adjustments.incline}`);
         console.log(`Speed limits: ${segment.speedLimits.min}-${segment.speedLimits.max} km/h`);
         console.log(`Incline limits: ${segment.inclineLimits.min}-${segment.inclineLimits.max}%`);
+        console.log(`Segment duration: ${segment.duration}s`);
     } else {
         // Stop any active heart rate training
         hrTraining.stopHFTraining();
+        hrTraining.stopRamping();
         
-        // Manual segment - set fixed values
+        // Manual segment - set fixed values with smooth ramping
         document.getElementById('targetSpeed').textContent = `Target: ${segment.speed.toFixed(1)} km/h`;
         
-        // Set speed and incline on treadmill if connected
         if (treadmillControl.connected()) {
             try {
-                await treadmillCommands.setSpeed(segment.speed);
-                await treadmillCommands.setInclination(segment.incline);
+                // Get current speed/incline for smooth transition
+                let currentSpeed = hrTraining.currentSpeed;
+                let currentIncline = hrTraining.currentIncline;
+                
+                // If we don't have current values, get them from the last treadmill data
+                if (currentSpeed === 0 && window.lastTreadmillData) {
+                    currentSpeed = window.lastTreadmillData.speed || 0;
+                    currentIncline = window.lastTreadmillData.inclination || 0;
+                }
+                
+                // Update HR training with current position
+                hrTraining.setCurrentSpeed(currentSpeed);
+                hrTraining.setCurrentIncline(currentIncline);
+                hrTraining.setSegmentDuration(segment.duration);
+                
+                // Use ramping for smooth transition
+                console.log(`Ramping from ${currentSpeed.toFixed(1)} to ${segment.speed.toFixed(1)} km/h over segment duration ${segment.duration}s`);
+                await hrTraining.rampToTarget(segment.speed, segment.incline);
                 
                 programControlMode = 'auto';
                 targetSpeed = segment.speed;
@@ -155,8 +184,9 @@ async function finishWorkout() {
         workoutInterval = null;
     }
     
-    // Stop heart rate training
+    // Stop heart rate training and ramping
     hrTraining.stopHFTraining();
+    hrTraining.stopRamping();
     
     // Stop treadmill if connected
     if (treadmillControl.connected()) {
@@ -660,6 +690,9 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 treadmillControl.addDataHandler(treadmillData => {
+    // Store last treadmill data globally for smooth transitions
+    window.lastTreadmillData = treadmillData;
+    
     monitor.setCurrentHeartRate(treadmillData.hr);
     monitor.setSpeed(treadmillData.speed);
     monitor.setDistance(treadmillData.totalDistance);
@@ -680,11 +713,11 @@ treadmillControl.addDataHandler(treadmillData => {
         }
     }
     
-    // Update current speed and incline in training system
-    if (treadmillData.speed !== undefined) {
+    // Update current speed and incline in training system (only if not ramping)
+    if (treadmillData.speed !== undefined && !hrTraining.isRamping) {
         hrTraining.setCurrentSpeed(treadmillData.speed);
     }
-    if (treadmillData.inclination !== undefined) {
+    if (treadmillData.inclination !== undefined && !hrTraining.isRamping) {
         hrTraining.setCurrentIncline(treadmillData.inclination);
     }
     
