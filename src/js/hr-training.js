@@ -25,6 +25,10 @@ let targetIncline = 0;
 let lastProgramSpeed = 0;
 let speedDeviationThreshold = 0.3; // km/h tolerance
 
+// Workout data logging
+let workoutData = [];
+let workoutSummary = null;
+
 // Speed conversion utilities
 function kmhToMinPerKm(kmh) {
     if (kmh <= 0) return 0;
@@ -123,18 +127,6 @@ async function finishWorkout() {
         workoutInterval = null;
     }
     
-    // Show workout builder, hide running interface
-    document.getElementById('workoutBuilder').style.display = 'block';
-    document.getElementById('runningInterface').style.display = 'none';
-    
-    // Reset pause button text
-    document.getElementById('pauseWorkout').textContent = 'Pause';
-    
-    // Reset program control state
-    programControlMode = 'auto';
-    targetSpeed = 0;
-    targetIncline = 0;
-    
     // Stop treadmill if connected
     if (treadmillControl.connected()) {
         try {
@@ -144,7 +136,20 @@ async function finishWorkout() {
         }
     }
     
-    alert('Workout completed!');
+    // Generate workout summary
+    generateWorkoutSummary();
+    
+    // Show post-workout screen
+    document.getElementById('runningInterface').style.display = 'none';
+    document.getElementById('postWorkoutScreen').style.display = 'block';
+    
+    // Reset pause button text
+    document.getElementById('pauseWorkout').textContent = 'Pause';
+    
+    // Reset program control state
+    programControlMode = 'auto';
+    targetSpeed = 0;
+    targetIncline = 0;
 }
 
 // Initialize when DOM is loaded
@@ -500,6 +505,10 @@ document.addEventListener('DOMContentLoaded', function() {
         workoutStartTime = Date.now();
         segmentStartTime = Date.now();
         
+        // Reset workout data logging
+        workoutData = [];
+        workoutSummary = null;
+        
         // Start first segment
         await startSegment(currentWorkoutSegments[0]);
         updateWorkoutDisplay();
@@ -542,6 +551,15 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('pauseWorkout').addEventListener('click', pauseWorkout);
     document.getElementById('stopWorkout').addEventListener('click', stopWorkout);
     document.getElementById('resumeProgramControl').addEventListener('click', resumeProgramControl);
+    
+    // Post-workout screen event listeners
+    document.getElementById('newWorkout').addEventListener('click', function() {
+        document.getElementById('postWorkoutScreen').style.display = 'none';
+        document.getElementById('workoutBuilder').style.display = 'block';
+    });
+    
+    document.getElementById('exportGarmin').addEventListener('click', exportGarminActivity);
+    document.getElementById('exportJson').addEventListener('click', exportWorkoutJson);
     
     // Training mode toggle
     document.querySelectorAll('input[name="trainingMode"]').forEach(radio => {
@@ -634,6 +652,9 @@ treadmillControl.addDataHandler(treadmillData => {
     // Update current speed display in running interface
     if (document.getElementById('runningInterface').style.display !== 'none') {
         document.getElementById('currentSpeed').textContent = `${treadmillData.speed.toFixed(1)} km/h`;
+        
+        // Log workout data for post-workout analysis
+        logWorkoutData(treadmillData);
         
         // Add debug info (remove this later)
         if (treadmillData.flags !== undefined) {
@@ -797,6 +818,199 @@ function showManualAdjustmentNotification(actualSpeed, targetSpeed) {
             notification.parentNode.removeChild(notification);
         }
     }, 4000);
+}
+
+// Log workout data for analysis
+function logWorkoutData(treadmillData) {
+    const dataPoint = {
+        timestamp: Date.now(),
+        elapsedTime: Math.floor((Date.now() - workoutStartTime) / 1000),
+        speed: treadmillData.speed || 0,
+        distance: treadmillData.totalDistance || 0,
+        heartRate: treadmillData.hr || 0,
+        incline: treadmillData.inclination || 0,
+        calories: treadmillData.kcal || 0,
+        segmentIndex: currentSegmentIndex,
+        programControlMode: programControlMode
+    };
+    
+    workoutData.push(dataPoint);
+}
+
+// Generate workout summary
+function generateWorkoutSummary() {
+    if (workoutData.length === 0) {
+        workoutSummary = {
+            duration: 0,
+            distance: 0,
+            avgSpeed: 0,
+            maxSpeed: 0,
+            avgHeartRate: 0,
+            maxHeartRate: 0,
+            calories: 0,
+            avgIncline: 0,
+            maxIncline: 0
+        };
+        return;
+    }
+    
+    const lastDataPoint = workoutData[workoutData.length - 1];
+    const validSpeedData = workoutData.filter(d => d.speed > 0);
+    const validHrData = workoutData.filter(d => d.heartRate > 0);
+    const validInclineData = workoutData.filter(d => d.incline !== undefined);
+    
+    workoutSummary = {
+        duration: lastDataPoint.elapsedTime,
+        distance: (lastDataPoint.distance / 1000).toFixed(2), // Convert to km
+        avgSpeed: validSpeedData.length > 0 ? 
+            (validSpeedData.reduce((sum, d) => sum + d.speed, 0) / validSpeedData.length).toFixed(1) : 0,
+        maxSpeed: validSpeedData.length > 0 ? 
+            Math.max(...validSpeedData.map(d => d.speed)).toFixed(1) : 0,
+        avgHeartRate: validHrData.length > 0 ? 
+            Math.round(validHrData.reduce((sum, d) => sum + d.heartRate, 0) / validHrData.length) : 0,
+        maxHeartRate: validHrData.length > 0 ? 
+            Math.max(...validHrData.map(d => d.heartRate)) : 0,
+        calories: lastDataPoint.calories,
+        avgIncline: validInclineData.length > 0 ? 
+            (validInclineData.reduce((sum, d) => sum + d.incline, 0) / validInclineData.length).toFixed(1) : 0,
+        maxIncline: validInclineData.length > 0 ? 
+            Math.max(...validInclineData.map(d => d.incline)).toFixed(1) : 0,
+        startTime: new Date(workoutStartTime),
+        endTime: new Date()
+    };
+    
+    // Update post-workout display
+    updatePostWorkoutDisplay();
+}
+
+// Update post-workout screen with summary data
+function updatePostWorkoutDisplay() {
+    if (!workoutSummary) return;
+    
+    const formatDuration = (seconds) => {
+        const h = Math.floor(seconds / 3600);
+        const m = Math.floor((seconds % 3600) / 60);
+        const s = seconds % 60;
+        return h > 0 ? `${h}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}` 
+                     : `${m}:${s.toString().padStart(2, '0')}`;
+    };
+    
+    document.getElementById('summaryDuration').textContent = formatDuration(workoutSummary.duration);
+    document.getElementById('summaryDistance').textContent = `${workoutSummary.distance} km`;
+    document.getElementById('summaryAvgSpeed').textContent = `${workoutSummary.avgSpeed} km/h`;
+    document.getElementById('summaryMaxSpeed').textContent = `${workoutSummary.maxSpeed} km/h`;
+    document.getElementById('summaryAvgHR').textContent = `${workoutSummary.avgHeartRate} bpm`;
+    document.getElementById('summaryMaxHR').textContent = `${workoutSummary.maxHeartRate} bpm`;
+    document.getElementById('summaryCalories').textContent = `${workoutSummary.calories} kcal`;
+    document.getElementById('summaryAvgIncline').textContent = `${workoutSummary.avgIncline}%`;
+    document.getElementById('summaryMaxIncline').textContent = `${workoutSummary.maxIncline}%`;
+    document.getElementById('workoutDate').textContent = workoutSummary.startTime.toLocaleDateString();
+    document.getElementById('workoutTime').textContent = workoutSummary.startTime.toLocaleTimeString();
+}
+
+// Export workout data as Garmin-compatible TCX file
+function exportGarminActivity() {
+    if (!workoutSummary || workoutData.length === 0) {
+        alert('No workout data to export');
+        return;
+    }
+    
+    const tcxContent = generateTCXFile();
+    const blob = new Blob([tcxContent], { type: 'application/xml' });
+    const url = URL.createObjectURL(blob);
+    
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `treadmill_workout_${workoutSummary.startTime.toISOString().split('T')[0]}.tcx`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+
+// Generate TCX file content
+function generateTCXFile() {
+    const formatTCXTime = (date) => date.toISOString();
+    
+    let trackPoints = '';
+    workoutData.forEach((point, index) => {
+        const pointTime = new Date(workoutStartTime + (point.elapsedTime * 1000));
+        trackPoints += `
+        <Trackpoint>
+          <Time>${formatTCXTime(pointTime)}</Time>
+          <DistanceMeters>${point.distance}</DistanceMeters>
+          <HeartRateBpm>
+            <Value>${point.heartRate}</Value>
+          </HeartRateBpm>
+          <Extensions>
+            <TPX xmlns="http://www.garmin.com/xmlschemas/ActivityExtension/v2">
+              <Speed>${(point.speed / 3.6).toFixed(2)}</Speed>
+            </TPX>
+          </Extensions>
+        </Trackpoint>`;
+    });
+    
+    const tcxContent = `<?xml version="1.0" encoding="UTF-8"?>
+<TrainingCenterDatabase xsi:schemaLocation="http://www.garmin.com/xmlschemas/TrainingCenterDatabase/v2 http://www.garmin.com/xmlschemas/TrainingCenterDatabasev2.xsd" xmlns="http://www.garmin.com/xmlschemas/TrainingCenterDatabase/v2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <Activities>
+    <Activity Sport="Running">
+      <Id>${formatTCXTime(workoutSummary.startTime)}</Id>
+      <Lap StartTime="${formatTCXTime(workoutSummary.startTime)}">
+        <TotalTimeSeconds>${workoutSummary.duration}</TotalTimeSeconds>
+        <DistanceMeters>${workoutSummary.distance * 1000}</DistanceMeters>
+        <MaximumSpeed>${(workoutSummary.maxSpeed / 3.6).toFixed(2)}</MaximumSpeed>
+        <Calories>${workoutSummary.calories}</Calories>
+        <AverageHeartRateBpm>
+          <Value>${workoutSummary.avgHeartRate}</Value>
+        </AverageHeartRateBpm>
+        <MaximumHeartRateBpm>
+          <Value>${workoutSummary.maxHeartRate}</Value>
+        </MaximumHeartRateBpm>
+        <Intensity>Active</Intensity>
+        <TriggerMethod>Manual</TriggerMethod>
+        <Track>${trackPoints}
+        </Track>
+      </Lap>
+      <Creator xsi:type="Device_t">
+        <Name>Treadmill HR Training App</Name>
+        <UnitId>0</UnitId>
+        <ProductID>0</ProductID>
+        <Version>
+          <VersionMajor>1</VersionMajor>
+          <VersionMinor>0</VersionMinor>
+        </Version>
+      </Creator>
+    </Activity>
+  </Activities>
+</TrainingCenterDatabase>`;
+    
+    return tcxContent;
+}
+
+// Export workout data as JSON
+function exportWorkoutJson() {
+    if (!workoutSummary || workoutData.length === 0) {
+        alert('No workout data to export');
+        return;
+    }
+    
+    const exportData = {
+        summary: workoutSummary,
+        segments: currentWorkoutSegments,
+        data: workoutData
+    };
+    
+    const jsonContent = JSON.stringify(exportData, null, 2);
+    const blob = new Blob([jsonContent], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `workout_data_${workoutSummary.startTime.toISOString().split('T')[0]}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
 }
 
 // Function to show status change notifications

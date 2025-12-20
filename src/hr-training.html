@@ -89,6 +89,81 @@
             <button id="startWorkout" class="start-button">Start Workout</button>
         </div>
 
+        <!-- Post-Workout Screen (hidden initially) -->
+        <div id="postWorkoutScreen" class="post-workout-screen" style="display: none;">
+            <h2>Workout Complete! 🎉</h2>
+            
+            <div class="workout-summary">
+                <div class="summary-header">
+                    <h3>Workout Summary</h3>
+                    <div class="workout-datetime">
+                        <span id="workoutDate"></span> at <span id="workoutTime"></span>
+                    </div>
+                </div>
+                
+                <div class="summary-grid">
+                    <div class="summary-item">
+                        <div class="summary-label">Duration</div>
+                        <div class="summary-value" id="summaryDuration">--:--</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="summary-label">Distance</div>
+                        <div class="summary-value" id="summaryDistance">-- km</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="summary-label">Avg Speed</div>
+                        <div class="summary-value" id="summaryAvgSpeed">-- km/h</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="summary-label">Max Speed</div>
+                        <div class="summary-value" id="summaryMaxSpeed">-- km/h</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="summary-label">Avg Heart Rate</div>
+                        <div class="summary-value" id="summaryAvgHR">-- bpm</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="summary-label">Max Heart Rate</div>
+                        <div class="summary-value" id="summaryMaxHR">-- bpm</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="summary-label">Calories</div>
+                        <div class="summary-value" id="summaryCalories">-- kcal</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="summary-label">Avg Incline</div>
+                        <div class="summary-value" id="summaryAvgIncline">--%</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="summary-label">Max Incline</div>
+                        <div class="summary-value" id="summaryMaxIncline">--%</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="export-section">
+                <h3>Export Workout</h3>
+                <div class="export-buttons">
+                    <button id="exportGarmin" class="export-btn garmin-btn">
+                        📱 Export for Garmin Connect
+                        <small>Download TCX file</small>
+                    </button>
+                    <button id="exportJson" class="export-btn json-btn">
+                        📄 Export Raw Data
+                        <small>Download JSON file</small>
+                    </button>
+                </div>
+                <div class="export-info">
+                    <p><strong>Garmin Connect:</strong> Upload the TCX file to Garmin Connect as a treadmill activity</p>
+                    <p><strong>Raw Data:</strong> Complete workout data including all segments and measurements</p>
+                </div>
+            </div>
+            
+            <div class="post-workout-actions">
+                <button id="newWorkout" class="action-btn primary">Start New Workout</button>
+            </div>
+        </div>
+
         <!-- Running Interface (hidden initially) -->
         <div id="runningInterface" class="running-interface" style="display: none;">
             <div class="controls">
