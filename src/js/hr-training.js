@@ -88,12 +88,40 @@ async function startSegment(segment) {
         // Set target heart rate display
         document.getElementById('targetSpeed').textContent = `Target HR: ${segment.targetHeartRate} bpm`;
         
-        // TODO: Start heart rate training with adjustment parameters
-        // This will be implemented in the next phase
+        // Configure heart rate training system
+        hrTraining.setTargetHeartRateZone(segment.targetHeartRate - 5, segment.targetHeartRate + 5);
+        hrTraining.setSpeedLimits(segment.speedLimits.min, segment.speedLimits.max);
+        hrTraining.setInclineLimits(segment.inclineLimits.min, segment.inclineLimits.max);
+        hrTraining.setAdjustmentMethods(segment.adjustments.speed, segment.adjustments.incline);
+        
+        // Set initial speed if we're adjusting speed and treadmill is connected
+        if (segment.adjustments.speed && treadmillControl.connected()) {
+            try {
+                // Start at minimum speed to begin heart rate training
+                const initialSpeed = Math.max(segment.speedLimits.min, 3.0); // Start at least 3 km/h
+                await treadmillCommands.setSpeed(initialSpeed);
+                hrTraining.setCurrentSpeed(initialSpeed);
+                console.log(`Set initial speed to ${initialSpeed} km/h for HR training`);
+            } catch (error) {
+                console.error('Failed to set initial speed for HR training:', error);
+            }
+        }
+        
+        // Start heart rate training
+        hrTraining.startHFTraining();
+        
         programControlMode = 'auto';
-        targetSpeed = 0; // Will be set by HR training
+        targetSpeed = segment.targetHeartRate; // Display target HR instead of speed
         targetIncline = 0;
+        
+        console.log(`Started HR training: Target ${segment.targetHeartRate} bpm (${segment.targetHeartRate - 5}-${segment.targetHeartRate + 5})`);
+        console.log(`Adjustments - Speed: ${segment.adjustments.speed}, Incline: ${segment.adjustments.incline}`);
+        console.log(`Speed limits: ${segment.speedLimits.min}-${segment.speedLimits.max} km/h`);
+        console.log(`Incline limits: ${segment.inclineLimits.min}-${segment.inclineLimits.max}%`);
     } else {
+        // Stop any active heart rate training
+        hrTraining.stopHFTraining();
+        
         // Manual segment - set fixed values
         document.getElementById('targetSpeed').textContent = `Target: ${segment.speed.toFixed(1)} km/h`;
         
@@ -126,6 +154,9 @@ async function finishWorkout() {
         clearInterval(workoutInterval);
         workoutInterval = null;
     }
+    
+    // Stop heart rate training
+    hrTraining.stopHFTraining();
     
     // Stop treadmill if connected
     if (treadmillControl.connected()) {
@@ -639,6 +670,14 @@ treadmillControl.addDataHandler(treadmillData => {
     // Feed data to heart rate training system
     if (treadmillData.hr && treadmillData.hr > 0) {
         hrTraining.handleHeartRateChanged(treadmillData.hr);
+        
+        // Debug logging for HR training
+        if (document.getElementById('runningInterface').style.display !== 'none') {
+            const currentSegment = currentWorkoutSegments[currentSegmentIndex];
+            if (currentSegment && currentSegment.type === 'heartRate') {
+                console.log(`HR Training - Current HR: ${treadmillData.hr}, Target: ${currentSegment.targetHeartRate}, Speed: ${treadmillData.speed}, Incline: ${treadmillData.inclination}`);
+            }
+        }
     }
     
     // Update current speed and incline in training system
@@ -724,7 +763,8 @@ treadmillControl.addStatusChangeHandler(statusChange => {
 
 // Check for manual speed adjustments by user
 function checkForManualAdjustments(treadmillData) {
-    if (programControlMode === 'auto' && targetSpeed > 0) {
+    // Only check for manual adjustments in manual segments (not HR segments)
+    if (programControlMode === 'auto' && targetSpeed > 0 && targetSpeed < 50) { // targetSpeed < 50 means it's a speed, not HR
         const speedDifference = Math.abs(treadmillData.speed - targetSpeed);
         
         if (speedDifference > speedDeviationThreshold) {
@@ -743,10 +783,19 @@ function updateControlModeDisplay() {
     const resumeButton = document.getElementById('resumeProgramControl');
     
     if (modeElement) {
+        // Check if we're in a heart rate segment
+        const currentSegment = currentWorkoutSegments[currentSegmentIndex];
+        const isHRTraining = currentSegment && currentSegment.type === 'heartRate';
+        
         switch (programControlMode) {
             case 'auto':
-                modeElement.textContent = '🤖 Program Control';
-                modeElement.className = 'control-mode auto';
+                if (isHRTraining) {
+                    modeElement.textContent = '❤️ HR Training Active';
+                    modeElement.className = 'control-mode hr-training';
+                } else {
+                    modeElement.textContent = '🤖 Program Control';
+                    modeElement.className = 'control-mode auto';
+                }
                 if (resumeButton) resumeButton.style.display = 'none';
                 break;
             case 'manual':

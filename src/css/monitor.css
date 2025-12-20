@@ -354,6 +354,11 @@ body {
     color: white;
 }
 
+.control-mode.hr-training {
+    background: #E91E63;
+    color: white;
+}
+
 #resumeProgramControl {
     padding: 5px 10px;
     background: #2196F3;
