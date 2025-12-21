@@ -434,6 +434,47 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('jsonFileInput').click();
     }
 
+    function showJsonPasteModal() {
+        document.getElementById('jsonPasteModal').style.display = 'block';
+        document.getElementById('jsonPasteArea').value = '';
+        document.getElementById('jsonPasteArea').focus();
+    }
+
+    function hideJsonPasteModal() {
+        document.getElementById('jsonPasteModal').style.display = 'none';
+    }
+
+    function importPastedJson() {
+        const jsonText = document.getElementById('jsonPasteArea').value.trim();
+        
+        if (!jsonText) {
+            alert('Please paste JSON content first');
+            return;
+        }
+
+        try {
+            const jsonData = JSON.parse(jsonText);
+            
+            // Validate and convert JSON workout to internal format
+            const segments = validateAndConvertJsonWorkout(jsonData);
+            
+            if (segments) {
+                currentWorkoutSegments = segments;
+                updateSegmentsList();
+                
+                // Set workout name if provided
+                if (jsonData.name) {
+                    document.getElementById('workoutName').value = jsonData.name;
+                }
+                
+                hideJsonPasteModal();
+                alert('Workout imported successfully!');
+            }
+        } catch (error) {
+            alert('Error parsing JSON: ' + error.message);
+        }
+    }
+
     function handleJsonFileImport(event) {
         const file = event.target.files[0];
         if (!file) return;
@@ -607,7 +648,27 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('loadWorkout').addEventListener('click', loadWorkout);
     document.getElementById('deleteWorkout').addEventListener('click', deleteWorkout);
     document.getElementById('importJson').addEventListener('click', importJsonWorkout);
+    document.getElementById('importJsonPaste').addEventListener('click', showJsonPasteModal);
     document.getElementById('jsonFileInput').addEventListener('change', handleJsonFileImport);
+    
+    // JSON paste modal event listeners
+    document.getElementById('closeJsonModal').addEventListener('click', hideJsonPasteModal);
+    document.getElementById('cancelJsonImport').addEventListener('click', hideJsonPasteModal);
+    document.getElementById('importPastedJson').addEventListener('click', importPastedJson);
+    
+    // Close modal when clicking outside
+    document.getElementById('jsonPasteModal').addEventListener('click', function(e) {
+        if (e.target === this) {
+            hideJsonPasteModal();
+        }
+    });
+    
+    // Close modal with Escape key
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && document.getElementById('jsonPasteModal').style.display === 'block') {
+            hideJsonPasteModal();
+        }
+    });
     document.getElementById('startWorkout').addEventListener('click', startWorkout);
     document.getElementById('pauseWorkout').addEventListener('click', pauseWorkout);
     document.getElementById('stopWorkout').addEventListener('click', stopWorkout);

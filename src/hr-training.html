@@ -21,7 +21,8 @@
                 <button id="loadWorkout">Load</button>
                 <button id="deleteWorkout">Delete</button>
                 <input type="file" id="jsonFileInput" accept=".json" style="display: none;" />
-                <button id="importJson">Import JSON</button>
+                <button id="importJson">Import JSON File</button>
+                <button id="importJsonPaste">Paste JSON</button>
             </div>
             
             <div class="segment-builder">
@@ -87,6 +88,23 @@
             </div>
             
             <button id="startWorkout" class="start-button">Start Workout</button>
+        </div>
+
+        <!-- JSON Paste Modal (hidden initially) -->
+        <div id="jsonPasteModal" class="modal" style="display: none;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Import JSON Workout</h3>
+                    <button id="closeJsonModal" class="close-btn">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <textarea id="jsonPasteArea" placeholder="Paste your JSON workout here..." rows="15"></textarea>
+                    <div class="modal-actions">
+                        <button id="importPastedJson" class="import-btn">Import</button>
+                        <button id="cancelJsonImport" class="cancel-btn">Cancel</button>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!-- Post-Workout Screen (hidden initially) -->
