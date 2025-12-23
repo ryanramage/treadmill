@@ -318,6 +318,9 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initialize wizard
     initializeWizard();
     
+    // Initialize theme
+    initializeTheme();
+    
     // Wizard Functions
     function initializeWizard() {
         showScreen('welcome');
@@ -432,6 +435,35 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Enable continue button if has segments
         document.getElementById('continueToConnection').disabled = !hasSegments;
+    }
+    
+    // Theme management
+    function initializeTheme() {
+        const savedTheme = localStorage.getItem('theme') || 'light';
+        setTheme(savedTheme);
+        
+        // Add theme toggle event listener
+        document.getElementById('themeToggle').addEventListener('click', toggleTheme);
+    }
+    
+    function setTheme(theme) {
+        const body = document.body;
+        const themeIcon = document.querySelector('.theme-icon');
+        
+        if (theme === 'dark') {
+            body.classList.add('dark-mode');
+            themeIcon.textContent = '☀️';
+        } else {
+            body.classList.remove('dark-mode');
+            themeIcon.textContent = '🌙';
+        }
+        
+        localStorage.setItem('theme', theme);
+    }
+    
+    function toggleTheme() {
+        const isDark = document.body.classList.contains('dark-mode');
+        setTheme(isDark ? 'light' : 'dark');
     }
 
     // UI Mode switching
