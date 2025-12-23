@@ -279,10 +279,297 @@ body {
     background: #45a049;
 }
 
+/* Running Interface Styles */
 .running-interface {
     padding: 20px;
+    background: #f8f9fa;
+    border-radius: 10px;
+    max-width: 1200px;
+    margin: 0 auto;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
 }
 
+.running-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.workout-title h2 {
+    margin: 0 0 10px 0;
+    color: #495057;
+    font-size: 1.8em;
+}
+
+.device-status {
+    font-size: 14px;
+    color: #6c757d;
+}
+
+.workout-controls {
+    display: flex;
+    gap: 10px;
+}
+
+.control-btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.control-btn.secondary {
+    background: #6c757d;
+    color: white;
+}
+
+.control-btn.secondary:hover {
+    background: #545b62;
+}
+
+.control-btn.warning {
+    background: #ffc107;
+    color: #212529;
+}
+
+.control-btn.warning:hover {
+    background: #e0a800;
+}
+
+.control-btn.danger {
+    background: #dc3545;
+    color: white;
+}
+
+.control-btn.danger:hover {
+    background: #c82333;
+}
+
+/* Speed Display */
+.speed-display {
+    background: white;
+    padding: 30px;
+    border-radius: 8px;
+    text-align: center;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.current-speed {
+    display: flex;
+    align-items: baseline;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.speed-value {
+    font-size: 4em;
+    font-weight: bold;
+    color: #28a745;
+    line-height: 1;
+}
+
+.speed-unit {
+    font-size: 1.5em;
+    color: #6c757d;
+    font-weight: 500;
+}
+
+.target-info {
+    font-size: 1.2em;
+    color: #495057;
+    font-weight: 500;
+}
+
+/* Workout Progress */
+.workout-progress {
+    background: white;
+    padding: 25px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.segment-header {
+    margin-bottom: 20px;
+}
+
+.segment-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.segment-title {
+    font-size: 1.3em;
+    font-weight: 600;
+    color: #495057;
+}
+
+.time-remaining {
+    font-size: 1.1em;
+    color: #007bff;
+    font-weight: 500;
+}
+
+.progress-container {
+    position: relative;
+}
+
+.progress-bar-large {
+    width: 100%;
+    height: 40px;
+    background: #e9ecef;
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.progress-fill-large {
+    height: 100%;
+    background: linear-gradient(90deg, #28a745, #20c997);
+    width: 0%;
+    transition: width 0.5s ease;
+    border-radius: 20px;
+    position: relative;
+}
+
+.progress-fill-large::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 20px;
+    height: 100%;
+    background: rgba(255,255,255,0.3);
+    border-radius: 0 20px 20px 0;
+}
+
+.progress-labels {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 8px;
+    font-size: 12px;
+    color: #6c757d;
+}
+
+/* Metrics Grid */
+.metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 15px;
+}
+
+.metric-card {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    border-left: 4px solid;
+}
+
+.metric-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+.metric-card.primary {
+    border-left-color: #007bff;
+}
+
+.metric-card.secondary {
+    border-left-color: #6c757d;
+}
+
+.metric-card.accent {
+    border-left-color: #e91e63;
+}
+
+.metric-card.info {
+    border-left-color: #17a2b8;
+}
+
+.metric-card.warning {
+    border-left-color: #ffc107;
+}
+
+.metric-card.neutral {
+    border-left-color: #28a745;
+}
+
+.metric-icon {
+    font-size: 2em;
+    opacity: 0.8;
+}
+
+.metric-content {
+    flex: 1;
+}
+
+.metric-label {
+    font-size: 12px;
+    color: #6c757d;
+    text-transform: uppercase;
+    font-weight: 600;
+    margin-bottom: 5px;
+    letter-spacing: 0.5px;
+}
+
+.metric-value {
+    font-size: 1.8em;
+    font-weight: bold;
+    color: #495057;
+    line-height: 1;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .running-header {
+        flex-direction: column;
+        gap: 15px;
+    }
+    
+    .workout-controls {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .speed-value {
+        font-size: 3em;
+    }
+    
+    .metrics-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .metric-card {
+        padding: 15px;
+    }
+    
+    .metric-value {
+        font-size: 1.5em;
+    }
+}
+
+/* Hide workout builder when running */
+.workout-builder.hidden {
+    display: none;
+}
+
+/* Legacy styles for backward compatibility */
 .segment-info {
     display: flex;
     justify-content: space-between;
@@ -302,11 +589,6 @@ body {
     background: #4CAF50;
     width: 0%;
     transition: width 0.3s ease;
-}
-
-/* Hide workout builder when running */
-.workout-builder.hidden {
-    display: none;
 }
 
 /* Treadmill status notification animation */

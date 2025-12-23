@@ -184,58 +184,105 @@
 
         <!-- Running Interface (hidden initially) -->
         <div id="runningInterface" class="running-interface" style="display: none;">
-            <div class="controls">
-                <button id="toggleConnection">Connect</button>
-                <button id="pauseWorkout">Pause</button>
-                <button id="stopWorkout">Stop</button>
-            </div>
-            
-            <div class="upper-half">
-                <div class="device-name" id="device-name">Device: Not connected</div>
-                <div class="control-mode-section">
-                    <span id="controlMode" class="control-mode auto">🤖 Program Control</span>
-                    <button id="resumeProgramControl" style="display: none;">Resume Program</button>
+            <div class="running-header">
+                <div class="workout-title">
+                    <h2>Workout in Progress</h2>
+                    <div class="device-status">
+                        <span id="device-name">Device: Not connected</span>
+                        <div class="control-mode-section">
+                            <span id="controlMode" class="control-mode auto">🤖 Program Control</span>
+                            <button id="resumeProgramControl" style="display: none;">Resume Program</button>
+                        </div>
+                    </div>
                 </div>
-                <h1 id="currentSpeed">-- km/h</h1>
-                <h2 id="targetSpeed">Target: -- km/h</h2>
-                <div id="workoutInfo">
+                
+                <div class="workout-controls">
+                    <button id="toggleConnection" class="control-btn secondary">Connect</button>
+                    <button id="pauseWorkout" class="control-btn warning">Pause</button>
+                    <button id="stopWorkout" class="control-btn danger">Stop</button>
+                </div>
+            </div>
+
+            <!-- Main Speed Display -->
+            <div class="speed-display">
+                <div class="current-speed">
+                    <span class="speed-value" id="currentSpeed">--</span>
+                    <span class="speed-unit">km/h</span>
+                </div>
+                <div class="target-info">
+                    <span id="targetSpeed">Target: -- km/h</span>
+                </div>
+            </div>
+
+            <!-- Workout Progress Section -->
+            <div class="workout-progress">
+                <div class="segment-header">
                     <div class="segment-info">
-                        <span id="currentSegmentInfo">Segment 1/5</span>
-                        <span id="segmentTimeRemaining">5:30 remaining</span>
+                        <span id="currentSegmentInfo" class="segment-title">Segment 1/5</span>
+                        <span id="segmentTimeRemaining" class="time-remaining">5:30 remaining</span>
                     </div>
-                    <div class="progress-bar">
-                        <div id="segmentProgress" class="progress-fill"></div>
+                </div>
+                
+                <div class="progress-container">
+                    <div class="progress-bar-large">
+                        <div id="segmentProgress" class="progress-fill-large"></div>
+                    </div>
+                    <div class="progress-labels">
+                        <span class="progress-start">Start</span>
+                        <span class="progress-end">End</span>
                     </div>
                 </div>
             </div>
-            <div class="lower-half">
-            <div class="tiles">
-                <div class="tile">
-                    <div class="title">Distance</div>
-                    <div class="value" id="distance">-- km</div>
+
+            <!-- Data Metrics Grid -->
+            <div class="metrics-grid">
+                <div class="metric-card primary">
+                    <div class="metric-icon">🏃</div>
+                    <div class="metric-content">
+                        <div class="metric-label">Distance</div>
+                        <div class="metric-value" id="distance">-- km</div>
+                    </div>
                 </div>
-                <div class="tile">
-                    <div class="title">Speed</div>
-                    <div class="value" id="speed">-- min/km</div>
+                
+                <div class="metric-card secondary">
+                    <div class="metric-icon">⏱️</div>
+                    <div class="metric-content">
+                        <div class="metric-label">Duration</div>
+                        <div class="metric-value" id="duration">--:--:--</div>
+                    </div>
                 </div>
-                <div class="tile">
-                    <div class="title">Duration</div>
-                    <div class="value" id="duration">--:--:--</div>
+                
+                <div class="metric-card accent">
+                    <div class="metric-icon">❤️</div>
+                    <div class="metric-content">
+                        <div class="metric-label">Heart Rate</div>
+                        <div class="metric-value" id="current-heart-rate">-- bpm</div>
+                    </div>
                 </div>
-                <div class="tile">
-                    <div class="title">Kcal</div>
-                    <div class="value" id="calories">-- kcal</div>
+                
+                <div class="metric-card info">
+                    <div class="metric-icon">🔥</div>
+                    <div class="metric-content">
+                        <div class="metric-label">Calories</div>
+                        <div class="metric-value" id="calories">-- kcal</div>
+                    </div>
                 </div>
-                <div class="tile">
-                    <div class="title">Incline</div>
-                    <div class="value" id="incline">-- %</div>
+                
+                <div class="metric-card warning">
+                    <div class="metric-icon">📈</div>
+                    <div class="metric-content">
+                        <div class="metric-label">Incline</div>
+                        <div class="metric-value" id="incline">-- %</div>
+                    </div>
                 </div>
-                <div class="tile">
-                    <div class="title">HR</div>
-                    <div class="value" id="current-heart-rate">-- bpm</div>
+                
+                <div class="metric-card neutral">
+                    <div class="metric-icon">⚡</div>
+                    <div class="metric-content">
+                        <div class="metric-label">Pace</div>
+                        <div class="metric-value" id="speed">-- min/km</div>
+                    </div>
                 </div>
-                <div class="tile"></div>
-                <div class="tile"></div>
             </div>
         </div>
     </div>
