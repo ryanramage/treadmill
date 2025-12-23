@@ -922,8 +922,8 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Load workout screen event listeners
     document.getElementById('backFromLoad').addEventListener('click', () => showScreen('welcome'));
-    document.getElementById('loadSelectedWorkout').addEventListener('click', loadSelectedWorkout);
-    document.getElementById('deleteSelectedWorkout').addEventListener('click', deleteSelectedWorkout);
+    document.getElementById('loadSelectedWorkout').addEventListener('click', () => loadSelectedWorkout());
+    document.getElementById('deleteSelectedWorkout').addEventListener('click', () => deleteSelectedWorkout());
     
     // Import workout screen event listeners
     document.getElementById('backFromImport').addEventListener('click', () => showScreen('welcome'));
