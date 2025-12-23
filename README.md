@@ -4,16 +4,16 @@ Transform your treadmill workouts with intelligent heart rate-based training tha
 
 ## Why Use This?
 
-**🎯 Stay in Your Target Zone**  
+**🎯 Stay in Your Target Zone**
 No more constantly checking your heart rate and manually adjusting speed. The app automatically speeds up or slows down your treadmill to keep you in your optimal training zone.
 
-**📱 Train Smarter, Not Harder**  
+**📱 Train Smarter, Not Harder**
 Whether you're doing interval training, endurance runs, or recovery sessions, let the technology handle the speed adjustments while you focus on your form and breathing.
 
-**📊 Real-Time Feedback**  
+**📊 Real-Time Feedback**
 See your heart rate, pace, distance, and training progress all in one place. Track your performance and stay motivated throughout your workout.
 
-**🏃‍♀️ Personalized Workouts**  
+**🏃‍♀️ Personalized Workouts**
 Create custom training sessions with different heart rate zones, durations, and intensity levels. Perfect for beginners building endurance or athletes fine-tuning their performance.
 
 ## What You Need
