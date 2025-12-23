@@ -535,7 +535,86 @@ body {
     line-height: 1;
 }
 
-/* Responsive Design */
+/* PWA Install Button */
+.install-button {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: #007bff;
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 25px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0, 123, 255, 0.3);
+    z-index: 1001;
+    transition: all 0.3s ease;
+}
+
+.install-button:hover {
+    background: #0056b3;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0, 123, 255, 0.4);
+}
+
+/* Mobile-first responsive design */
+@media (max-width: 480px) {
+    .container {
+        width: 100%;
+        padding: 10px;
+        box-sizing: border-box;
+    }
+    
+    .workout-builder {
+        padding: 15px;
+    }
+    
+    .workout-controls {
+        flex-direction: column;
+        gap: 8px;
+    }
+    
+    .workout-controls input,
+    .workout-controls select,
+    .workout-controls button {
+        width: 100%;
+        box-sizing: border-box;
+    }
+    
+    .segment-builder {
+        padding: 15px;
+    }
+    
+    .training-mode {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .speed-limits {
+        grid-template-columns: 1fr;
+        gap: 8px;
+    }
+    
+    .speed-input {
+        grid-template-columns: 1fr;
+        gap: 8px;
+    }
+    
+    .segment-item {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+    }
+    
+    .remove-segment {
+        margin-left: 0;
+        align-self: flex-end;
+    }
+}
+
+/* Tablet responsive design */
 @media (max-width: 768px) {
     .running-header {
         flex-direction: column;
@@ -545,6 +624,7 @@ body {
     .workout-controls {
         width: 100%;
         justify-content: center;
+        flex-wrap: wrap;
     }
     
     .speed-value {
@@ -552,7 +632,7 @@ body {
     }
     
     .metrics-grid {
-        grid-template-columns: 1fr;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
     }
     
     .metric-card {
@@ -561,6 +641,184 @@ body {
     
     .metric-value {
         font-size: 1.5em;
+    }
+    
+    .summary-grid {
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    }
+    
+    .export-buttons {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Large mobile screens */
+@media (max-width: 600px) {
+    .running-interface {
+        padding: 15px;
+        gap: 15px;
+    }
+    
+    .speed-display {
+        padding: 20px;
+    }
+    
+    .speed-value {
+        font-size: 2.5em;
+    }
+    
+    .workout-progress {
+        padding: 20px;
+    }
+    
+    .metrics-grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+    
+    .metric-card {
+        padding: 15px;
+    }
+    
+    .metric-icon {
+        font-size: 1.5em;
+    }
+    
+    .metric-value {
+        font-size: 1.4em;
+    }
+}
+
+/* Touch-friendly improvements */
+@media (hover: none) and (pointer: coarse) {
+    button, .control-btn, .export-btn, .action-btn {
+        min-height: 44px;
+        min-width: 44px;
+    }
+    
+    input, select, textarea {
+        font-size: 16px; /* Prevents zoom on iOS */
+    }
+    
+    .metric-card:hover {
+        transform: none;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .export-btn:hover,
+    .action-btn:hover,
+    .control-btn:hover {
+        transform: none;
+    }
+}
+
+/* Landscape orientation on mobile */
+@media (max-width: 768px) and (orientation: landscape) {
+    .running-interface {
+        padding: 10px;
+        gap: 10px;
+    }
+    
+    .speed-display {
+        padding: 15px;
+    }
+    
+    .speed-value {
+        font-size: 2em;
+    }
+    
+    .workout-progress {
+        padding: 15px;
+    }
+    
+    .metrics-grid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 10px;
+    }
+    
+    .metric-card {
+        padding: 10px;
+    }
+    
+    .metric-value {
+        font-size: 1.2em;
+    }
+}
+
+/* High DPI displays */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+    .metric-icon {
+        image-rendering: -webkit-optimize-contrast;
+        image-rendering: crisp-edges;
+    }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+    body {
+        background-color: #1a1a1a;
+        color: #ffffff;
+    }
+    
+    .container {
+        background: #2d2d2d;
+    }
+    
+    .workout-builder,
+    .running-interface,
+    .post-workout-screen {
+        background: #2d2d2d;
+        color: #ffffff;
+    }
+    
+    .workout-summary,
+    .export-section,
+    .speed-display,
+    .workout-progress,
+    .metric-card,
+    .running-header {
+        background: #3d3d3d;
+        color: #ffffff;
+        border-color: #555;
+    }
+    
+    .summary-item,
+    .segment-item {
+        background: #4d4d4d;
+        border-color: #666;
+    }
+    
+    input, select, textarea {
+        background: #4d4d4d;
+        color: #ffffff;
+        border-color: #666;
+    }
+    
+    .modal-content {
+        background: #3d3d3d;
+        color: #ffffff;
+    }
+    
+    .modal-header {
+        background: #2d2d2d;
+        border-color: #555;
+    }
+}
+
+/* Reduce motion for accessibility */
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+    
+    .progress-fill-large {
+        transition: none;
+    }
+    
+    .metric-card:hover {
+        transform: none;
     }
 }
 

@@ -2,8 +2,27 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Heart Rate Monitor</title>
+    
+    <!-- PWA Meta Tags -->
+    <meta name="description" content="Heart rate training app for treadmill workouts with Bluetooth connectivity">
+    <meta name="theme-color" content="#007bff">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="HR Training">
+    <meta name="msapplication-TileColor" content="#007bff">
+    <meta name="msapplication-config" content="/browserconfig.xml">
+    
+    <!-- Manifest -->
+    <link rel="manifest" href="/manifest.json">
+    
+    <!-- Icons -->
+    <link rel="icon" type="image/png" sizes="32x32" href="/icons/icon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/icons/icon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/icons/icon-180x180.png">
+    <link rel="mask-icon" href="/icons/safari-pinned-tab.svg" color="#007bff">
+    
     <link rel="stylesheet" href="css/overlay.css" />
     <link rel="stylesheet" href="css/monitor.css" />
 </head>
@@ -288,5 +307,75 @@
     </div>
 
     <script type="module" src="js/hr-training.js"></script>
+    
+    <!-- PWA Installation and Service Worker -->
+    <script>
+        // Register service worker
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(registration => {
+                        console.log('SW registered: ', registration);
+                    })
+                    .catch(registrationError => {
+                        console.log('SW registration failed: ', registrationError);
+                    });
+            });
+        }
+
+        // PWA Install prompt
+        let deferredPrompt;
+        const installButton = document.createElement('button');
+        installButton.textContent = 'Install App';
+        installButton.className = 'install-button';
+        installButton.style.display = 'none';
+
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            installButton.style.display = 'block';
+        });
+
+        installButton.addEventListener('click', async () => {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                console.log(`User response to the install prompt: ${outcome}`);
+                deferredPrompt = null;
+                installButton.style.display = 'none';
+            }
+        });
+
+        // Add install button to the page
+        document.addEventListener('DOMContentLoaded', () => {
+            const container = document.querySelector('.container');
+            if (container) {
+                container.appendChild(installButton);
+            }
+        });
+
+        // Handle app installed
+        window.addEventListener('appinstalled', () => {
+            console.log('PWA was installed');
+            installButton.style.display = 'none';
+        });
+
+        // Prevent zoom on double tap (iOS)
+        let lastTouchEnd = 0;
+        document.addEventListener('touchend', function (event) {
+            const now = (new Date()).getTime();
+            if (now - lastTouchEnd <= 300) {
+                event.preventDefault();
+            }
+            lastTouchEnd = now;
+        }, false);
+
+        // Handle orientation changes
+        window.addEventListener('orientationchange', () => {
+            setTimeout(() => {
+                window.scrollTo(0, 0);
+            }, 100);
+        });
+    </script>
 </body>
 </html>

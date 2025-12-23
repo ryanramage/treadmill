@@ -213,8 +213,102 @@ async function finishWorkout() {
     targetIncline = 0;
 }
 
+// PWA utilities
+const PWAUtils = {
+    // Check if app is running as PWA
+    isPWA() {
+        return window.matchMedia('(display-mode: standalone)').matches || 
+               window.navigator.standalone === true;
+    },
+    
+    // Handle offline/online status
+    setupOfflineHandling() {
+        window.addEventListener('online', () => {
+            console.log('App is online');
+            this.showConnectionStatus('Online', 'success');
+        });
+        
+        window.addEventListener('offline', () => {
+            console.log('App is offline');
+            this.showConnectionStatus('Offline - Limited functionality', 'warning');
+        });
+    },
+    
+    // Show connection status
+    showConnectionStatus(message, type) {
+        const notification = document.createElement('div');
+        notification.className = `connection-notification ${type}`;
+        notification.textContent = message;
+        notification.style.cssText = `
+            position: fixed;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: ${type === 'success' ? '#4CAF50' : '#FF9800'};
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            z-index: 1002;
+            font-size: 14px;
+            font-weight: 500;
+        `;
+        
+        document.body.appendChild(notification);
+        
+        setTimeout(() => {
+            if (notification.parentNode) {
+                notification.parentNode.removeChild(notification);
+            }
+        }, 3000);
+    },
+    
+    // Save data to localStorage for offline use
+    saveOfflineData(key, data) {
+        try {
+            localStorage.setItem(`offline_${key}`, JSON.stringify({
+                data: data,
+                timestamp: Date.now()
+            }));
+        } catch (error) {
+            console.error('Failed to save offline data:', error);
+        }
+    },
+    
+    // Load data from localStorage
+    loadOfflineData(key) {
+        try {
+            const stored = localStorage.getItem(`offline_${key}`);
+            if (stored) {
+                const parsed = JSON.parse(stored);
+                return parsed.data;
+            }
+        } catch (error) {
+            console.error('Failed to load offline data:', error);
+        }
+        return null;
+    },
+    
+    // Handle app updates
+    setupUpdateHandling() {
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.addEventListener('controllerchange', () => {
+                window.location.reload();
+            });
+        }
+    }
+};
+
 // Initialize when DOM is loaded
 document.addEventListener('DOMContentLoaded', function() {
+    // Initialize PWA features
+    PWAUtils.setupOfflineHandling();
+    PWAUtils.setupUpdateHandling();
+    
+    // Load offline data if available
+    const offlineWorkouts = PWAUtils.loadOfflineData('workouts');
+    if (offlineWorkouts && Object.keys(offlineWorkouts).length > 0) {
+        localStorage.setItem('savedWorkouts', JSON.stringify(offlineWorkouts));
+    }
     
     // UI Mode switching
     function toggleTrainingMode() {
@@ -384,6 +478,9 @@ document.addEventListener('DOMContentLoaded', function() {
         const workouts = JSON.parse(localStorage.getItem('savedWorkouts') || '{}');
         workouts[name] = currentWorkoutSegments;
         localStorage.setItem('savedWorkouts', JSON.stringify(workouts));
+        
+        // Save to offline storage as well
+        PWAUtils.saveOfflineData('workouts', workouts);
         
         loadSavedWorkouts();
         document.getElementById('workoutName').value = '';
@@ -978,6 +1075,16 @@ function logWorkoutData(treadmillData) {
     };
     
     workoutData.push(dataPoint);
+    
+    // Save workout data periodically for offline recovery
+    if (workoutData.length % 10 === 0) { // Every 10 data points
+        PWAUtils.saveOfflineData('current_workout', {
+            data: workoutData,
+            segments: currentWorkoutSegments,
+            startTime: workoutStartTime,
+            currentSegmentIndex: currentSegmentIndex
+        });
+    }
 }
 
 // Generate workout summary
