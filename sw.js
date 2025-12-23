@@ -73,7 +73,7 @@ async function syncWorkoutData() {
 self.addEventListener('push', event => {
   const options = {
     body: event.data ? event.data.text() : 'New workout reminder',
-    icon: '/icons/icon-192x192.png',
+    icon: '/icons/192.png',
     badge: '/icons/icon-72x72.png',
     vibrate: [100, 50, 100],
     data: {
@@ -84,12 +84,12 @@ self.addEventListener('push', event => {
       {
         action: 'explore',
         title: 'Start Workout',
-        icon: '/icons/icon-192x192.png'
+        icon: '/icons/192.png'
       },
       {
         action: 'close',
         title: 'Close',
-        icon: '/icons/icon-192x192.png'
+        icon: '/icons/192.png'
       }
     ]
   };
