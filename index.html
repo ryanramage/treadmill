@@ -28,103 +28,218 @@
 </head>
 <body>
     <div class="container">
-        <!-- Workout Builder Section -->
-        <div id="workoutBuilder" class="workout-builder">
-            <h2>Workout Builder</h2>
-            <div class="workout-controls">
-                <input type="text" id="workoutName" placeholder="Workout Name" />
-                <button id="saveWorkout">Save</button>
-                <select id="savedWorkouts">
-                    <option value="">Select saved workout...</option>
-                </select>
-                <button id="loadWorkout">Load</button>
-                <button id="deleteWorkout">Delete</button>
-                <input type="file" id="jsonFileInput" accept=".json" style="display: none;" />
-                <button id="importJson">Import JSON File</button>
-                <button id="importJsonPaste">Paste JSON</button>
+        <!-- Welcome Screen -->
+        <div id="welcomeScreen" class="welcome-screen">
+            <div class="welcome-header">
+                <h1>Heart Rate Training</h1>
+                <p>Choose how you'd like to start your workout</p>
             </div>
-
-            <div class="segment-builder">
-                <h3>Add Segment</h3>
-
-                <!-- Duration -->
-                <input type="number" id="segmentDuration" placeholder="Duration (minutes)" step="0.1" min="0" />
-
-                <!-- Training Mode Toggle -->
-                <div class="training-mode">
-                    <label>
-                        <input type="radio" name="trainingMode" value="heartRate" checked> Heart Rate Target
-                    </label>
-                    <label>
-                        <input type="radio" name="trainingMode" value="manual"> Manual Control
-                    </label>
+            
+            <div class="welcome-options">
+                <div class="option-card primary" id="loadWorkoutOption">
+                    <div class="option-icon">📋</div>
+                    <h3>Load Saved Workout</h3>
+                    <p>Start with a previously saved workout</p>
+                    <button class="option-button primary">Load Workout</button>
                 </div>
-
-                <!-- Heart Rate Mode -->
-                <div id="heartRateMode" class="mode-section">
-                    <input type="number" id="targetHeartRate" placeholder="Target HR (bpm)" min="50" max="220" />
-                    <div class="adjustment-strategy">
-                        <label>Adjust:</label>
-                        <label><input type="checkbox" name="adjustSpeed" checked> Speed</label>
-                        <label><input type="checkbox" name="adjustIncline"> Incline</label>
-                    </div>
-                    <div class="speed-limits">
-                        <input type="number" id="minSpeed" placeholder="Min Speed" step="0.1" />
-                        <input type="number" id="maxSpeed" placeholder="Max Speed" step="0.1" />
-                        <select id="speedLimitsUnit">
-                            <option value="kmh">km/h</option>
-                            <option value="minperkm">min/km</option>
-                        </select>
-                    </div>
+                
+                <div class="option-card secondary" id="createWorkoutOption">
+                    <div class="option-icon">✨</div>
+                    <h3>Create New Workout</h3>
+                    <p>Build a custom workout from scratch</p>
+                    <button class="option-button secondary">Create Workout</button>
                 </div>
-
-                <!-- Manual Mode -->
-                <div id="manualMode" class="mode-section" style="display: none;">
-                    <div class="speed-input">
-                        <input type="number" id="manualSpeed" placeholder="Speed" step="0.1" />
-                        <select id="speedUnit">
-                            <option value="kmh">km/h</option>
-                            <option value="minperkm">min/km</option>
-                        </select>
-                    </div>
-                    <input type="number" id="manualIncline" placeholder="Incline %" step="0.1" />
-                </div>
-
-                <button id="addSegment">Add Segment</button>
-            </div>
-
-            <div class="segments-list">
-                <h3>Workout Segments</h3>
-                <div id="segmentsList"></div>
-            </div>
-
-            <div class="connection-section">
-                <h3>Treadmill Connection</h3>
-                <div class="connection-controls">
-                    <button id="toggleConnectionBuilder">Connect</button>
-                    <span id="connectionStatus" class="connection-status disconnected">Not connected</span>
-                </div>
-            </div>
-
-            <button id="startWorkout" class="start-button">Start Workout</button>
-        </div>
-
-        <!-- JSON Paste Modal (hidden initially) -->
-        <div id="jsonPasteModal" class="modal" style="display: none;">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h3>Import JSON Workout</h3>
-                    <button id="closeJsonModal" class="close-btn">&times;</button>
-                </div>
-                <div class="modal-body">
-                    <textarea id="jsonPasteArea" placeholder="Paste your JSON workout here..." rows="15"></textarea>
-                    <div class="modal-actions">
-                        <button id="importPastedJson" class="import-btn">Import</button>
-                        <button id="cancelJsonImport" class="cancel-btn">Cancel</button>
-                    </div>
+                
+                <div class="option-card tertiary" id="importWorkoutOption">
+                    <div class="option-icon">📥</div>
+                    <h3>Import Workout</h3>
+                    <p>Import from file or JSON</p>
+                    <button class="option-button tertiary">Import Workout</button>
                 </div>
             </div>
         </div>
+
+        <!-- Load Workout Screen -->
+        <div id="loadWorkoutScreen" class="wizard-screen" style="display: none;">
+            <div class="wizard-header">
+                <button id="backFromLoad" class="back-button">← Back</button>
+                <h2>Load Saved Workout</h2>
+            </div>
+            
+            <div class="load-workout-content">
+                <div class="saved-workouts-section">
+                    <h3>Select a saved workout:</h3>
+                    <div class="workout-list" id="savedWorkoutsList">
+                        <!-- Populated by JavaScript -->
+                    </div>
+                </div>
+            </div>
+            
+            <div class="wizard-actions">
+                <button id="deleteSelectedWorkout" class="action-button danger" style="display: none;">Delete Workout</button>
+                <button id="loadSelectedWorkout" class="action-button primary" disabled>Load & Continue</button>
+            </div>
+        </div>
+
+        <!-- Import Workout Screen -->
+        <div id="importWorkoutScreen" class="wizard-screen" style="display: none;">
+            <div class="wizard-header">
+                <button id="backFromImport" class="back-button">← Back</button>
+                <h2>Import Workout</h2>
+            </div>
+            
+            <div class="import-options">
+                <div class="import-method">
+                    <h3>Import from File</h3>
+                    <p>Select a JSON workout file from your device</p>
+                    <input type="file" id="jsonFileInput" accept=".json" style="display: none;" />
+                    <button id="importFromFile" class="action-button secondary">Choose File</button>
+                </div>
+                
+                <div class="import-divider">
+                    <span>OR</span>
+                </div>
+                
+                <div class="import-method">
+                    <h3>Paste JSON</h3>
+                    <p>Paste workout JSON directly</p>
+                    <textarea id="jsonPasteArea" placeholder="Paste your JSON workout here..." rows="8"></textarea>
+                    <button id="importFromPaste" class="action-button secondary">Import JSON</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Workout Builder Screen -->
+        <div id="workoutBuilderScreen" class="wizard-screen" style="display: none;">
+            <div class="wizard-header">
+                <button id="backFromBuilder" class="back-button">← Back</button>
+                <h2 id="builderTitle">Create New Workout</h2>
+            </div>
+            
+            <div class="workout-builder-content">
+                <div class="workout-name-section">
+                    <input type="text" id="workoutName" placeholder="Workout Name" class="workout-name-input" />
+                </div>
+                
+                <div class="segment-builder">
+                    <h3>Add Segment</h3>
+                    
+                    <!-- Duration -->
+                    <div class="input-group">
+                        <label>Duration (minutes)</label>
+                        <input type="number" id="segmentDuration" placeholder="Duration" step="0.1" min="0" />
+                    </div>
+                    
+                    <!-- Training Mode Toggle -->
+                    <div class="training-mode">
+                        <label>Training Mode:</label>
+                        <div class="radio-group">
+                            <label class="radio-label">
+                                <input type="radio" name="trainingMode" value="heartRate" checked> Heart Rate Target
+                            </label>
+                            <label class="radio-label">
+                                <input type="radio" name="trainingMode" value="manual"> Manual Control
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <!-- Heart Rate Mode -->
+                    <div id="heartRateMode" class="mode-section">
+                        <div class="input-group">
+                            <label>Target Heart Rate (bpm)</label>
+                            <input type="number" id="targetHeartRate" placeholder="Target HR" min="50" max="220" />
+                        </div>
+                        <div class="adjustment-strategy">
+                            <label>Adjust:</label>
+                            <div class="checkbox-group">
+                                <label class="checkbox-label"><input type="checkbox" name="adjustSpeed" checked> Speed</label>
+                                <label class="checkbox-label"><input type="checkbox" name="adjustIncline"> Incline</label>
+                            </div>
+                        </div>
+                        <div class="speed-limits">
+                            <label>Speed Limits</label>
+                            <div class="speed-limits-inputs">
+                                <input type="number" id="minSpeed" placeholder="Min Speed" step="0.1" />
+                                <input type="number" id="maxSpeed" placeholder="Max Speed" step="0.1" />
+                                <select id="speedLimitsUnit">
+                                    <option value="kmh">km/h</option>
+                                    <option value="minperkm">min/km</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Manual Mode -->
+                    <div id="manualMode" class="mode-section" style="display: none;">
+                        <div class="input-group">
+                            <label>Speed</label>
+                            <div class="speed-input">
+                                <input type="number" id="manualSpeed" placeholder="Speed" step="0.1" />
+                                <select id="speedUnit">
+                                    <option value="kmh">km/h</option>
+                                    <option value="minperkm">min/km</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="input-group">
+                            <label>Incline (%)</label>
+                            <input type="number" id="manualIncline" placeholder="Incline" step="0.1" />
+                        </div>
+                    </div>
+                    
+                    <button id="addSegment" class="action-button primary">Add Segment</button>
+                </div>
+                
+                <div class="segments-list">
+                    <h3>Workout Segments</h3>
+                    <div id="segmentsList" class="segments-container">
+                        <div class="no-segments">No segments added yet. Add your first segment above.</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="wizard-actions">
+                <button id="saveWorkout" class="action-button secondary" style="display: none;">Save Workout</button>
+                <button id="continueToConnection" class="action-button primary" disabled>Continue</button>
+            </div>
+        </div>
+
+        <!-- Connection Screen -->
+        <div id="connectionScreen" class="wizard-screen" style="display: none;">
+            <div class="wizard-header">
+                <button id="backFromConnection" class="back-button">← Back</button>
+                <h2>Connect Treadmill</h2>
+            </div>
+            
+            <div class="connection-content">
+                <div class="connection-status-section">
+                    <div class="connection-icon" id="connectionIcon">🔗</div>
+                    <h3 id="connectionStatusText">Not Connected</h3>
+                    <p id="connectionStatusDescription">Connect to your Bluetooth treadmill to start the workout</p>
+                </div>
+                
+                <div class="connection-actions">
+                    <button id="connectTreadmill" class="connect-button">
+                        <span class="button-icon">📡</span>
+                        Connect Treadmill
+                    </button>
+                </div>
+                
+                <div class="connection-info">
+                    <h4>Connection Requirements:</h4>
+                    <ul>
+                        <li>Bluetooth-enabled treadmill with FTMS support</li>
+                        <li>Treadmill must be powered on and in pairing mode</li>
+                        <li>Browser must support Web Bluetooth (Chrome/Edge recommended)</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="wizard-actions">
+                <button id="startWorkoutFromConnection" class="action-button primary" disabled>Start Workout</button>
+            </div>
+        </div>
+
 
         <!-- Post-Workout Screen (hidden initially) -->
         <div id="postWorkoutScreen" class="post-workout-screen" style="display: none;">

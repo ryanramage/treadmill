@@ -298,6 +298,11 @@ const PWAUtils = {
     }
 };
 
+// Wizard state management
+let currentScreen = 'welcome';
+let selectedWorkoutName = null;
+let workoutModified = false;
+
 // Initialize when DOM is loaded
 document.addEventListener('DOMContentLoaded', function() {
     // Initialize PWA features
@@ -310,6 +315,125 @@ document.addEventListener('DOMContentLoaded', function() {
         localStorage.setItem('savedWorkouts', JSON.stringify(offlineWorkouts));
     }
     
+    // Initialize wizard
+    initializeWizard();
+    
+    // Wizard Functions
+    function initializeWizard() {
+        showScreen('welcome');
+        loadSavedWorkoutsForWizard();
+    }
+    
+    function showScreen(screenName) {
+        // Hide all screens
+        const screens = ['welcomeScreen', 'loadWorkoutScreen', 'importWorkoutScreen', 'workoutBuilderScreen', 'connectionScreen'];
+        screens.forEach(screen => {
+            const element = document.getElementById(screen);
+            if (element) element.style.display = 'none';
+        });
+        
+        // Show target screen
+        const targetScreen = document.getElementById(screenName + 'Screen');
+        if (targetScreen) {
+            targetScreen.style.display = 'block';
+            currentScreen = screenName;
+        }
+    }
+    
+    function loadSavedWorkoutsForWizard() {
+        const workoutsList = document.getElementById('savedWorkoutsList');
+        const workouts = JSON.parse(localStorage.getItem('savedWorkouts') || '{}');
+        
+        workoutsList.innerHTML = '';
+        
+        if (Object.keys(workouts).length === 0) {
+            workoutsList.innerHTML = '<div class="no-workouts">No saved workouts found. Create your first workout!</div>';
+            return;
+        }
+        
+        Object.keys(workouts).forEach(name => {
+            const segments = workouts[name];
+            const totalDuration = segments.reduce((sum, seg) => sum + seg.duration, 0);
+            const minutes = Math.floor(totalDuration / 60);
+            
+            const workoutItem = document.createElement('div');
+            workoutItem.className = 'workout-item';
+            workoutItem.dataset.workoutName = name;
+            
+            workoutItem.innerHTML = `
+                <h4>${name}</h4>
+                <div class="workout-details">
+                    ${segments.length} segments • ${minutes} minutes total
+                </div>
+            `;
+            
+            workoutItem.addEventListener('click', () => selectWorkout(name, workoutItem));
+            workoutsList.appendChild(workoutItem);
+        });
+    }
+    
+    function selectWorkout(name, element) {
+        // Remove previous selection
+        document.querySelectorAll('.workout-item').forEach(item => {
+            item.classList.remove('selected');
+        });
+        
+        // Select current workout
+        element.classList.add('selected');
+        selectedWorkoutName = name;
+        
+        // Enable buttons
+        document.getElementById('loadSelectedWorkout').disabled = false;
+        document.getElementById('deleteSelectedWorkout').style.display = 'inline-block';
+    }
+    
+    function loadSelectedWorkout() {
+        if (!selectedWorkoutName) return;
+        
+        const workouts = JSON.parse(localStorage.getItem('savedWorkouts') || '{}');
+        if (workouts[selectedWorkoutName]) {
+            currentWorkoutSegments = [...workouts[selectedWorkoutName]];
+            document.getElementById('workoutName').value = selectedWorkoutName;
+            document.getElementById('builderTitle').textContent = `Edit: ${selectedWorkoutName}`;
+            workoutModified = false;
+            updateSegmentsList();
+            showScreen('workoutBuilder');
+            updateBuilderActions();
+        }
+    }
+    
+    function deleteSelectedWorkout() {
+        if (!selectedWorkoutName) return;
+        
+        if (confirm(`Are you sure you want to delete "${selectedWorkoutName}"?`)) {
+            const workouts = JSON.parse(localStorage.getItem('savedWorkouts') || '{}');
+            delete workouts[selectedWorkoutName];
+            localStorage.setItem('savedWorkouts', JSON.stringify(workouts));
+            PWAUtils.saveOfflineData('workouts', workouts);
+            
+            selectedWorkoutName = null;
+            loadSavedWorkoutsForWizard();
+            document.getElementById('loadSelectedWorkout').disabled = true;
+            document.getElementById('deleteSelectedWorkout').style.display = 'none';
+        }
+    }
+    
+    function updateBuilderActions() {
+        const hasSegments = currentWorkoutSegments.length > 0;
+        const hasName = document.getElementById('workoutName').value.trim() !== '';
+        
+        // Show save button if workout has been modified and has name + segments
+        const saveButton = document.getElementById('saveWorkout');
+        if (workoutModified && hasName && hasSegments) {
+            saveButton.style.display = 'inline-block';
+        } else {
+            saveButton.style.display = 'none';
+        }
+        
+        // Enable continue button if has segments
+        document.getElementById('continueToConnection').disabled = !hasSegments;
+    }
+
     // UI Mode switching
     function toggleTrainingMode() {
         const mode = document.querySelector('input[name="trainingMode"]:checked').value;
@@ -405,8 +529,10 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         currentWorkoutSegments.push(segment);
+        workoutModified = true;
         updateSegmentsList();
         clearSegmentInputs();
+        updateBuilderActions();
     }
     
     function clearSegmentInputs() {
@@ -420,6 +546,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function updateSegmentsList() {
         const list = document.getElementById('segmentsList');
+        
+        if (currentWorkoutSegments.length === 0) {
+            list.innerHTML = '<div class="no-segments">No segments added yet. Add your first segment above.</div>';
+            return;
+        }
+        
         list.innerHTML = '';
         
         currentWorkoutSegments.forEach((segment, index) => {
@@ -460,7 +592,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function removeSegment(index) {
         currentWorkoutSegments.splice(index, 1);
+        workoutModified = true;
         updateSegmentsList();
+        updateBuilderActions();
     }
 
     function saveWorkout() {
@@ -482,8 +616,8 @@ document.addEventListener('DOMContentLoaded', function() {
         // Save to offline storage as well
         PWAUtils.saveOfflineData('workouts', workouts);
         
-        loadSavedWorkouts();
-        document.getElementById('workoutName').value = '';
+        workoutModified = false;
+        updateBuilderActions();
         alert('Workout saved successfully!');
     }
 
@@ -527,21 +661,11 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    function importJsonWorkout() {
+    function importFromFile() {
         document.getElementById('jsonFileInput').click();
     }
 
-    function showJsonPasteModal() {
-        document.getElementById('jsonPasteModal').style.display = 'block';
-        document.getElementById('jsonPasteArea').value = '';
-        document.getElementById('jsonPasteArea').focus();
-    }
-
-    function hideJsonPasteModal() {
-        document.getElementById('jsonPasteModal').style.display = 'none';
-    }
-
-    function importPastedJson() {
+    function importFromPaste() {
         const jsonText = document.getElementById('jsonPasteArea').value.trim();
         
         if (!jsonText) {
@@ -557,14 +681,19 @@ document.addEventListener('DOMContentLoaded', function() {
             
             if (segments) {
                 currentWorkoutSegments = segments;
-                updateSegmentsList();
+                workoutModified = true;
                 
                 // Set workout name if provided
                 if (jsonData.name) {
                     document.getElementById('workoutName').value = jsonData.name;
+                    document.getElementById('builderTitle').textContent = `Imported: ${jsonData.name}`;
+                } else {
+                    document.getElementById('builderTitle').textContent = 'Create New Workout';
                 }
                 
-                hideJsonPasteModal();
+                updateSegmentsList();
+                updateBuilderActions();
+                showScreen('workoutBuilder');
                 alert('Workout imported successfully!');
             }
         } catch (error) {
@@ -591,8 +720,14 @@ document.addEventListener('DOMContentLoaded', function() {
                     // Set workout name if provided
                     if (jsonData.name) {
                         document.getElementById('workoutName').value = jsonData.name;
+                        document.getElementById('builderTitle').textContent = `Imported: ${jsonData.name}`;
+                    } else {
+                        document.getElementById('builderTitle').textContent = 'Create New Workout';
                     }
-                    
+                
+                    updateSegmentsList();
+                    updateBuilderActions();
+                    showScreen('workoutBuilder');
                     alert('Workout imported successfully!');
                 }
             } catch (error) {
@@ -695,8 +830,12 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
         
-        // Hide workout builder, show running interface
-        document.getElementById('workoutBuilder').style.display = 'none';
+        // Hide all wizard screens, show running interface
+        const screens = ['welcomeScreen', 'loadWorkoutScreen', 'importWorkoutScreen', 'workoutBuilderScreen', 'connectionScreen'];
+        screens.forEach(screen => {
+            const element = document.getElementById(screen);
+            if (element) element.style.display = 'none';
+        });
         document.getElementById('runningInterface').style.display = 'block';
         
         // Initialize workout state
@@ -733,40 +872,49 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     
-    // Load saved workouts on page load
-    loadSavedWorkouts();
-    
     // Initialize UI
     toggleTrainingMode();
     
-    // Event Listeners
-    document.getElementById('addSegment').addEventListener('click', addSegment);
-    document.getElementById('saveWorkout').addEventListener('click', saveWorkout);
-    document.getElementById('loadWorkout').addEventListener('click', loadWorkout);
-    document.getElementById('deleteWorkout').addEventListener('click', deleteWorkout);
-    document.getElementById('importJson').addEventListener('click', importJsonWorkout);
-    document.getElementById('importJsonPaste').addEventListener('click', showJsonPasteModal);
+    // Welcome screen event listeners
+    document.getElementById('loadWorkoutOption').addEventListener('click', () => showScreen('loadWorkout'));
+    document.getElementById('createWorkoutOption').addEventListener('click', () => {
+        currentWorkoutSegments = [];
+        workoutModified = false;
+        document.getElementById('workoutName').value = '';
+        document.getElementById('builderTitle').textContent = 'Create New Workout';
+        updateSegmentsList();
+        updateBuilderActions();
+        showScreen('workoutBuilder');
+    });
+    document.getElementById('importWorkoutOption').addEventListener('click', () => showScreen('importWorkout'));
+    
+    // Load workout screen event listeners
+    document.getElementById('backFromLoad').addEventListener('click', () => showScreen('welcome'));
+    document.getElementById('loadSelectedWorkout').addEventListener('click', loadSelectedWorkout);
+    document.getElementById('deleteSelectedWorkout').addEventListener('click', deleteSelectedWorkout);
+    
+    // Import workout screen event listeners
+    document.getElementById('backFromImport').addEventListener('click', () => showScreen('welcome'));
+    document.getElementById('importFromFile').addEventListener('click', importFromFile);
+    document.getElementById('importFromPaste').addEventListener('click', importFromPaste);
     document.getElementById('jsonFileInput').addEventListener('change', handleJsonFileImport);
     
-    // JSON paste modal event listeners
-    document.getElementById('closeJsonModal').addEventListener('click', hideJsonPasteModal);
-    document.getElementById('cancelJsonImport').addEventListener('click', hideJsonPasteModal);
-    document.getElementById('importPastedJson').addEventListener('click', importPastedJson);
+    // Workout builder screen event listeners
+    document.getElementById('backFromBuilder').addEventListener('click', () => showScreen('welcome'));
+    document.getElementById('addSegment').addEventListener('click', addSegment);
+    document.getElementById('saveWorkout').addEventListener('click', saveWorkout);
+    document.getElementById('continueToConnection').addEventListener('click', () => showScreen('connection'));
     
-    // Close modal when clicking outside
-    document.getElementById('jsonPasteModal').addEventListener('click', function(e) {
-        if (e.target === this) {
-            hideJsonPasteModal();
-        }
-    });
+    // Connection screen event listeners
+    document.getElementById('backFromConnection').addEventListener('click', () => showScreen('workoutBuilder'));
+    document.getElementById('connectTreadmill').addEventListener('click', connectTreadmill);
+    document.getElementById('startWorkoutFromConnection').addEventListener('click', startWorkout);
     
-    // Close modal with Escape key
-    document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape' && document.getElementById('jsonPasteModal').style.display === 'block') {
-            hideJsonPasteModal();
-        }
+    // Workout name input listener
+    document.getElementById('workoutName').addEventListener('input', () => {
+        workoutModified = true;
+        updateBuilderActions();
     });
-    document.getElementById('startWorkout').addEventListener('click', startWorkout);
     document.getElementById('pauseWorkout').addEventListener('click', pauseWorkout);
     document.getElementById('stopWorkout').addEventListener('click', stopWorkout);
     document.getElementById('resumeProgramControl').addEventListener('click', resumeProgramControl);
@@ -774,7 +922,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Post-workout screen event listeners
     document.getElementById('newWorkout').addEventListener('click', function() {
         document.getElementById('postWorkoutScreen').style.display = 'none';
-        document.getElementById('workoutBuilder').style.display = 'block';
+        initializeWizard();
     });
     
     document.getElementById('exportGarmin').addEventListener('click', exportGarminActivity);
@@ -793,12 +941,14 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
-    // Connection toggle for workout builder
-    document.querySelector('#toggleConnectionBuilder').addEventListener('click', async function() {
-        const button = document.querySelector('#toggleConnectionBuilder');
-        const status = document.querySelector('#connectionStatus');
+    // Connection management for wizard
+    async function connectTreadmill() {
+        const button = document.getElementById('connectTreadmill');
+        const statusText = document.getElementById('connectionStatusText');
+        const statusDescription = document.getElementById('connectionStatusDescription');
+        const connectionContent = document.querySelector('.connection-content');
         
-        if(!treadmillControl.connected()) {
+        if (!treadmillControl.connected()) {
             try {
                 button.textContent = 'Connecting...';
                 button.disabled = true;
@@ -806,28 +956,24 @@ document.addEventListener('DOMContentLoaded', function() {
                 await treadmillControl.connect();
                 await treadmillCommands.requestControl();
                 
-                button.textContent = 'Disconnect';
+                // Update UI to connected state
+                connectionContent.classList.add('connected');
+                document.getElementById('connectionIcon').textContent = '✅';
+                statusText.textContent = `Connected: ${treadmillControl.device.name}`;
+                statusDescription.textContent = 'Ready to start your workout!';
+                button.innerHTML = '<span class="button-icon">✅</span>Connected';
                 button.disabled = false;
-                status.textContent = `Connected: ${treadmillControl.device.name}`;
-                status.className = 'connection-status connected';
                 
-                monitor.setDeviceName(treadmillControl.device.name);
+                // Enable start workout button
+                document.getElementById('startWorkoutFromConnection').disabled = false;
+                
             } catch (error) {
-                button.textContent = 'Connect';
+                button.innerHTML = '<span class="button-icon">📡</span>Connect Treadmill';
                 button.disabled = false;
-                status.textContent = 'Connection failed';
-                status.className = 'connection-status error';
                 alert('Failed to connect to treadmill: ' + error.message);
             }
         }
-        else {
-            button.textContent = 'Connect';
-            treadmillControl.disconnect();
-            status.textContent = 'Not connected';
-            status.className = 'connection-status disconnected';
-            monitor.setDeviceName('Not connected');
-        }
-    });
+    }
     
     // Connection toggle for running interface (kept for manual reconnection if needed)
     document.querySelector('#toggleConnection').addEventListener('click', async function() {
