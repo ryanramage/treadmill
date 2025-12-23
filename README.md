@@ -33,6 +33,55 @@ Create custom training sessions with different heart rate zones, durations, and 
 4. Set your target heart rate zone
 5. Start your workout and let the app do the rest!
 
+## Import Custom Workouts
+
+Create sophisticated training plans by importing JSON workout files. The app supports a flexible format that lets you define heart rate zones, pace targets, and complex interval structures.
+
+**JSON Schema:** [workout-schema.json](workout-schema.json)
+
+### Using ChatGPT to Create Workouts
+
+You can use ChatGPT to convert existing workout plans into the JSON format:
+
+1. Copy your existing workout description (from a training plan, coach, or app)
+2. Ask ChatGPT: "Convert this workout to JSON format using this schema: [paste the schema]"
+3. Import the generated JSON into the app
+
+**Example prompt:**
+```
+Convert this workout to JSON format using the provided schema:
+"5 min warmup at easy pace, then 6x (3 min at 165 BPM, 2 min recovery at 140 BPM), 5 min cooldown"
+
+Use this schema: [paste workout-schema.json contents]
+```
+
+## Export to Garmin
+
+After completing your workout, export your training data to Garmin Connect:
+
+- **TCX Export**: Download your workout as a TCX file compatible with Garmin Connect, Strava, and other fitness platforms
+- **Complete Data**: Includes heart rate, pace, distance, and elevation data
+- **Easy Upload**: Simply upload the TCX file to your preferred fitness tracking service
+
+The export captures all your training metrics, making it easy to track progress and analyze performance over time.
+
+## Features
+
+### 🔄 Import & Export
+- **JSON Import**: Import complex workout structures with multiple segments and heart rate zones
+- **ChatGPT Integration**: Use AI to convert any workout description into importable JSON format
+- **TCX Export**: Export completed workouts to Garmin Connect, Strava, and other fitness platforms
+
+### 🎛️ Smart Controls
+- **Automatic Speed Adjustment**: AI-powered speed changes to maintain target heart rate
+- **Manual Override**: Take control when needed, then resume automatic mode
+- **Safety Limits**: Set minimum and maximum speed boundaries for each segment
+
+### 📊 Real-Time Analytics
+- **Live Heart Rate Monitoring**: See your current HR, target zone, and trends
+- **Pace & Distance Tracking**: Monitor your progress throughout the workout
+- **Segment Progress**: Visual indicators for current segment and remaining time
+
 ## Safety First
 
 This app is designed to enhance your training, but always prioritize safety. Keep the emergency stop button within reach, start with conservative settings, and listen to your body. The app is continuously being improved, so report any issues you encounter.
