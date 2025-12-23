@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Heart Rate Monitor</title>
+    <title>Rocks Treadmill</title>
 
     <!-- PWA Meta Tags -->
     <meta name="description" content="Heart rate training app for treadmill workouts with Bluetooth connectivity">
@@ -32,14 +32,14 @@
         <button id="themeToggle" class="theme-toggle" aria-label="Toggle dark/light mode">
             <span class="theme-icon">🌙</span>
         </button>
-        
+
         <!-- Welcome Screen -->
         <div id="welcomeScreen" class="welcome-screen">
             <div class="welcome-header">
                 <h1>Heart Rate Training</h1>
                 <p>Choose how you'd like to start your workout</p>
             </div>
-            
+
             <div class="welcome-options">
                 <div class="option-card primary" id="loadWorkoutOption">
                     <div class="option-icon">📋</div>
@@ -47,14 +47,14 @@
                     <p>Start with a previously saved workout</p>
                     <button class="option-button primary">Load Workout</button>
                 </div>
-                
+
                 <div class="option-card secondary" id="createWorkoutOption">
                     <div class="option-icon">✨</div>
                     <h3>Create New Workout</h3>
                     <p>Build a custom workout from scratch</p>
                     <button class="option-button secondary">Create Workout</button>
                 </div>
-                
+
                 <div class="option-card tertiary" id="importWorkoutOption">
                     <div class="option-icon">📥</div>
                     <h3>Import Workout</h3>
@@ -70,7 +70,7 @@
                 <button id="backFromLoad" class="back-button">← Back</button>
                 <h2>Load Saved Workout</h2>
             </div>
-            
+
             <div class="load-workout-content">
                 <div class="saved-workouts-section">
                     <h3>Select a saved workout:</h3>
@@ -79,7 +79,7 @@
                     </div>
                 </div>
             </div>
-            
+
             <div class="wizard-actions">
                 <button id="deleteSelectedWorkout" class="action-button danger" style="display: none;">Delete Workout</button>
                 <button id="loadSelectedWorkout" class="action-button primary" disabled>Load & Continue</button>
@@ -92,7 +92,7 @@
                 <button id="backFromImport" class="back-button">← Back</button>
                 <h2>Import Workout</h2>
             </div>
-            
+
             <div class="import-options">
                 <div class="import-method">
                     <h3>Import from File</h3>
@@ -100,11 +100,11 @@
                     <input type="file" id="jsonFileInput" accept=".json" style="display: none;" />
                     <button id="importFromFile" class="action-button secondary">Choose File</button>
                 </div>
-                
+
                 <div class="import-divider">
                     <span>OR</span>
                 </div>
-                
+
                 <div class="import-method">
                     <h3>Paste JSON</h3>
                     <p>Paste workout JSON directly</p>
@@ -120,21 +120,21 @@
                 <button id="backFromBuilder" class="back-button">← Back</button>
                 <h2 id="builderTitle">Create New Workout</h2>
             </div>
-            
+
             <div class="workout-builder-content">
                 <div class="workout-name-section">
                     <input type="text" id="workoutName" placeholder="Workout Name" class="workout-name-input" />
                 </div>
-                
+
                 <div class="segment-builder">
                     <h3>Add Segment</h3>
-                    
+
                     <!-- Duration -->
                     <div class="input-group">
                         <label>Duration (minutes)</label>
                         <input type="number" id="segmentDuration" placeholder="Duration" step="0.1" min="0" />
                     </div>
-                    
+
                     <!-- Training Mode Toggle -->
                     <div class="training-mode">
                         <label>Training Mode:</label>
@@ -147,7 +147,7 @@
                             </label>
                         </div>
                     </div>
-                    
+
                     <!-- Heart Rate Mode -->
                     <div id="heartRateMode" class="mode-section">
                         <div class="input-group">
@@ -173,7 +173,7 @@
                             </div>
                         </div>
                     </div>
-                    
+
                     <!-- Manual Mode -->
                     <div id="manualMode" class="mode-section" style="display: none;">
                         <div class="input-group">
@@ -191,10 +191,10 @@
                             <input type="number" id="manualIncline" placeholder="Incline" step="0.1" />
                         </div>
                     </div>
-                    
+
                     <button id="addSegment" class="action-button primary">Add Segment</button>
                 </div>
-                
+
                 <div class="segments-list">
                     <h3>Workout Segments</h3>
                     <div id="segmentsList" class="segments-container">
@@ -202,7 +202,7 @@
                     </div>
                 </div>
             </div>
-            
+
             <div class="wizard-actions">
                 <button id="saveWorkout" class="action-button secondary" style="display: none;">Save Workout</button>
                 <button id="continueToConnection" class="action-button primary" disabled>Continue</button>
@@ -215,21 +215,21 @@
                 <button id="backFromConnection" class="back-button">← Back</button>
                 <h2>Connect Treadmill</h2>
             </div>
-            
+
             <div class="connection-content">
                 <div class="connection-status-section">
                     <div class="connection-icon" id="connectionIcon">🔗</div>
                     <h3 id="connectionStatusText">Not Connected</h3>
                     <p id="connectionStatusDescription">Connect to your Bluetooth treadmill to start the workout</p>
                 </div>
-                
+
                 <div class="connection-actions">
                     <button id="connectTreadmill" class="connect-button">
                         <span class="button-icon">📡</span>
                         Connect Treadmill
                     </button>
                 </div>
-                
+
                 <div class="connection-info">
                     <h4>Connection Requirements:</h4>
                     <ul>
@@ -239,7 +239,7 @@
                     </ul>
                 </div>
             </div>
-            
+
             <div class="wizard-actions">
                 <button id="startWorkoutFromConnection" class="action-button primary" disabled>Start Workout</button>
             </div>
