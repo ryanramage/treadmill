@@ -479,6 +479,72 @@ body {
     gap: 15px;
 }
 
+/* Tablet layout improvements - 2 columns for wider screens */
+@media (min-width: 768px) and (max-width: 1024px) {
+    .metrics-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 20px;
+    }
+    
+    .running-interface {
+        padding: 25px;
+        gap: 25px;
+    }
+    
+    .speed-display {
+        padding: 35px;
+    }
+    
+    .workout-progress {
+        padding: 30px;
+    }
+    
+    .metric-card {
+        padding: 25px;
+    }
+    
+    .metric-value {
+        font-size: 2em;
+    }
+    
+    .speed-value {
+        font-size: 4.5em;
+    }
+}
+
+/* Large tablet layout - 3 columns for very wide tablets */
+@media (min-width: 1024px) {
+    .metrics-grid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 20px;
+    }
+    
+    .running-interface {
+        padding: 30px;
+        gap: 30px;
+    }
+    
+    .speed-display {
+        padding: 40px;
+    }
+    
+    .workout-progress {
+        padding: 35px;
+    }
+    
+    .metric-card {
+        padding: 30px;
+    }
+    
+    .metric-value {
+        font-size: 2.2em;
+    }
+    
+    .speed-value {
+        font-size: 5em;
+    }
+}
+
 .metric-card {
     background: white;
     padding: 20px;
@@ -625,7 +691,7 @@ body {
     }
 }
 
-/* Tablet responsive design */
+/* Small tablet responsive design */
 @media (max-width: 768px) {
     .running-header {
         flex-direction: column;
@@ -660,6 +726,56 @@ body {
     
     .export-buttons {
         grid-template-columns: 1fr;
+    }
+}
+
+/* Medium tablet layout - 2 columns for post-workout summary */
+@media (min-width: 768px) and (max-width: 1024px) {
+    .summary-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 20px;
+    }
+    
+    .export-buttons {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 20px;
+    }
+    
+    .post-workout-screen {
+        padding: 30px;
+    }
+    
+    .workout-summary {
+        padding: 25px;
+    }
+    
+    .export-section {
+        padding: 25px;
+    }
+}
+
+/* Large tablet layout for post-workout */
+@media (min-width: 1024px) {
+    .summary-grid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 25px;
+    }
+    
+    .export-buttons {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 25px;
+    }
+    
+    .post-workout-screen {
+        padding: 40px;
+    }
+    
+    .workout-summary {
+        padding: 30px;
+    }
+    
+    .export-section {
+        padding: 30px;
     }
 }
 
@@ -753,6 +869,39 @@ body {
     
     .metric-value {
         font-size: 1.2em;
+    }
+}
+
+/* Tablet landscape orientation - optimize for wide screens */
+@media (min-width: 768px) and (max-width: 1024px) and (orientation: landscape) {
+    .metrics-grid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 15px;
+    }
+    
+    .running-interface {
+        padding: 20px;
+        gap: 20px;
+    }
+    
+    .speed-display {
+        padding: 25px;
+    }
+    
+    .workout-progress {
+        padding: 25px;
+    }
+    
+    .metric-card {
+        padding: 20px;
+    }
+    
+    .metric-value {
+        font-size: 1.8em;
+    }
+    
+    .speed-value {
+        font-size: 4em;
     }
 }
 
