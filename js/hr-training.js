@@ -24,7 +24,7 @@ let targetSpeed = 0;
 let targetIncline = 0;
 let lastProgramSpeed = 0;
 let speedDeviationThreshold = 0.3; // km/h tolerance
-let segmentStartGracePeriod = 10000; // 10 seconds grace period after segment start
+let segmentStartGracePeriod = 2000; // 2 seconds grace period after segment start
 let lastSegmentStartTime = 0;
 
 // Workout data logging
@@ -137,6 +137,10 @@ async function startSegment(segment) {
                 hrTraining.setCurrentSpeed(initialSpeed);
                 hrTraining.setCurrentIncline(initialIncline);
                 
+                // Explicitly set initial speed and incline on treadmill
+                await treadmillCommands.setSpeed(initialSpeed);
+                await treadmillCommands.setInclination(initialIncline);
+                
                 console.log(`Starting HR segment from current position: ${initialSpeed.toFixed(1)} km/h, ${initialIncline.toFixed(1)}%`);
             } catch (error) {
                 console.error('Failed to initialize HR training position:', error);
@@ -180,14 +184,16 @@ async function startSegment(segment) {
                 hrTraining.setCurrentIncline(currentIncline);
                 hrTraining.setSegmentDuration(segment.duration);
                 
-                // Use ramping for smooth transition
-                console.log(`Ramping from ${currentSpeed.toFixed(1)} to ${segment.speed.toFixed(1)} km/h over segment duration ${segment.duration}s`);
-                await hrTraining.rampToTarget(segment.speed, segment.incline);
+                // Immediately set the segment speed and incline for this segment
+                await treadmillCommands.setSpeed(segment.speed);
+                await treadmillCommands.setInclination(segment.incline);
                 
                 programControlMode = 'auto';
                 targetSpeed = segment.speed;
                 targetIncline = segment.incline;
                 lastProgramSpeed = segment.speed;
+                
+                console.log(`Manual segment started: speed ${segment.speed.toFixed(1)} km/h, incline ${segment.incline.toFixed(1)}%`);
             } catch (error) {
                 console.error('Failed to set treadmill parameters:', error);
                 alert('Failed to set treadmill speed/incline: ' + error.message);
@@ -1193,12 +1199,19 @@ function checkForManualAdjustments(treadmillData) {
             adjustedThreshold = Math.max(speedDeviationThreshold, 1.0); // At least 1.0 km/h threshold for low speeds
         }
         
+        // If we're in a manual segment and in program control mode,
+        // check if the speed is significantly different from what we set
         if (speedDifference > adjustedThreshold) {
-            // User manually adjusted speed
-            console.log(`Manual speed adjustment detected: target ${targetSpeed}, actual ${treadmillData.speed}, threshold ${adjustedThreshold}`);
-            programControlMode = 'manual';
-            updateControlModeDisplay();
-            showManualAdjustmentNotification(treadmillData.speed, targetSpeed);
+            // Only consider it a manual adjustment if the speed has been stable for a bit
+            // This prevents false detections during normal speed changes
+            if (treadmillControl.isSpeedStable()) {
+                console.log(`Manual speed adjustment detected: target ${targetSpeed}, actual ${treadmillData.speed}, threshold ${adjustedThreshold}`);
+                programControlMode = 'manual';
+                updateControlModeDisplay();
+                showManualAdjustmentNotification(treadmillData.speed, targetSpeed);
+            } else {
+                console.log(`Speed difference detected but speed not stable yet: ${speedDifference} km/h`);
+            }
         }
     }
 }
