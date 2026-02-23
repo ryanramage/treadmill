@@ -17,6 +17,7 @@ let workoutStartTime = null;
 let currentSegmentIndex = 0;
 let segmentStartTime = null;
 let workoutInterval = null;
+let editingSegmentIndex = null;
 
 // Program control state
 let programControlMode = 'auto'; // 'auto', 'manual', 'paused'
@@ -593,7 +594,27 @@ document.addEventListener('DOMContentLoaded', function() {
             };
         }
         
-        currentWorkoutSegments.push(segment);
+        // Check if we're editing or adding
+        if (editingSegmentIndex !== null) {
+            // Update existing segment
+            currentWorkoutSegments[editingSegmentIndex] = segment;
+            editingSegmentIndex = null;
+            
+            // Reset button text
+            const addButton = document.getElementById('addSegment');
+            addButton.textContent = 'Add Segment';
+            addButton.classList.remove('updating');
+            
+            // Hide cancel button
+            document.getElementById('cancelEdit').style.display = 'none';
+            
+            // Reset form title
+            document.querySelector('.segment-builder h3').textContent = 'Add Segment';
+        } else {
+            // Add new segment
+            currentWorkoutSegments.push(segment);
+        }
+        
         workoutModified = true;
         updateSegmentsList();
         clearSegmentInputs();
@@ -649,7 +670,10 @@ document.addEventListener('DOMContentLoaded', function() {
             
             div.innerHTML = `
                 ${segmentDescription}
-                <button class="remove-segment" data-index="${index}">Remove</button>
+                <div class="segment-actions">
+                    <button class="edit-segment" data-index="${index}">Edit</button>
+                    <button class="remove-segment" data-index="${index}">Remove</button>
+                </div>
             `;
             list.appendChild(div);
         });
@@ -658,8 +682,80 @@ document.addEventListener('DOMContentLoaded', function() {
     function removeSegment(index) {
         currentWorkoutSegments.splice(index, 1);
         workoutModified = true;
+        
+        // If we're editing this segment or one after it, cancel edit
+        if (editingSegmentIndex !== null) {
+            if (editingSegmentIndex === index) {
+                cancelEdit();
+            } else if (editingSegmentIndex > index) {
+                editingSegmentIndex--;
+            }
+        }
+        
         updateSegmentsList();
         updateBuilderActions();
+    }
+
+    function editSegment(index) {
+        const segment = currentWorkoutSegments[index];
+        editingSegmentIndex = index;
+        
+        // Update form title
+        document.querySelector('.segment-builder h3').textContent = `Edit Segment ${index + 1}`;
+        
+        // Populate form with segment data
+        document.getElementById('segmentDuration').value = (segment.duration / 60).toFixed(1);
+        
+        if (segment.type === 'heartRate') {
+            // Set to heart rate mode
+            document.querySelector('input[name="trainingMode"][value="heartRate"]').checked = true;
+            toggleTrainingMode();
+            
+            // Populate heart rate fields
+            document.getElementById('targetHeartRate').value = segment.targetHeartRate;
+            document.querySelector('input[name="adjustSpeed"]').checked = segment.adjustments.speed;
+            document.querySelector('input[name="adjustIncline"]').checked = segment.adjustments.incline;
+            document.getElementById('minSpeed').value = segment.speedLimits.min.toFixed(1);
+            document.getElementById('maxSpeed').value = segment.speedLimits.max.toFixed(1);
+            document.getElementById('speedLimitsUnit').value = 'kmh';
+        } else {
+            // Set to manual mode
+            document.querySelector('input[name="trainingMode"][value="manual"]').checked = true;
+            toggleTrainingMode();
+            
+            // Populate manual fields
+            document.getElementById('manualSpeed').value = segment.speed.toFixed(1);
+            document.getElementById('speedUnit').value = 'kmh';
+            document.getElementById('manualIncline').value = segment.incline.toFixed(1);
+        }
+        
+        // Change button text to "Update Segment"
+        const addButton = document.getElementById('addSegment');
+        addButton.textContent = 'Update Segment';
+        addButton.classList.add('updating');
+        
+        // Show cancel button
+        document.getElementById('cancelEdit').style.display = 'inline-block';
+        
+        // Scroll to form
+        document.querySelector('.segment-builder').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    function cancelEdit() {
+        editingSegmentIndex = null;
+        
+        // Reset button text
+        const addButton = document.getElementById('addSegment');
+        addButton.textContent = 'Add Segment';
+        addButton.classList.remove('updating');
+        
+        // Hide cancel button
+        document.getElementById('cancelEdit').style.display = 'none';
+        
+        // Reset form title
+        document.querySelector('.segment-builder h3').textContent = 'Add Segment';
+        
+        clearSegmentInputs();
     }
 
     function saveWorkout() {
@@ -970,6 +1066,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Workout builder screen event listeners
     document.getElementById('backFromBuilder').addEventListener('click', () => showScreen('welcome'));
     document.getElementById('addSegment').addEventListener('click', addSegment);
+    document.getElementById('cancelEdit').addEventListener('click', cancelEdit);
     document.getElementById('saveWorkout').addEventListener('click', saveWorkout);
     document.getElementById('continueToConnection').addEventListener('click', () => showScreen('connection'));
     
@@ -1014,11 +1111,14 @@ document.addEventListener('DOMContentLoaded', function() {
         radio.addEventListener('change', toggleTrainingMode);
     });
     
-    // Event delegation for remove segment buttons
+    // Event delegation for edit and remove segment buttons
     document.getElementById('segmentsList').addEventListener('click', function(e) {
         if (e.target.classList.contains('remove-segment')) {
             const index = parseInt(e.target.getAttribute('data-index'));
             removeSegment(index);
+        } else if (e.target.classList.contains('edit-segment')) {
+            const index = parseInt(e.target.getAttribute('data-index'));
+            editSegment(index);
         }
     });
     
