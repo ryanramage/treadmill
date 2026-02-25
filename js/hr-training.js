@@ -861,6 +861,9 @@ document.addEventListener('DOMContentLoaded', function() {
         // Save to offline storage as well
         PWAUtils.saveOfflineData('workouts', workouts);
         
+        // Refresh the workout list so it shows immediately
+        loadSavedWorkoutsForWizard();
+        
         workoutModified = false;
         updateBuilderActions();
         alert('Workout saved successfully!');
