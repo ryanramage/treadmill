@@ -398,13 +398,21 @@ document.addEventListener('DOMContentLoaded', function() {
             workoutItem.dataset.workoutName = name;
             
             workoutItem.innerHTML = `
-                <h4>${name}</h4>
-                <div class="workout-details">
-                    ${segments.length} segments • ${minutes} minutes total
+                <div class="workout-item-content">
+                    <h4>${name}</h4>
+                    <div class="workout-details">
+                        ${segments.length} segments • ${minutes} minutes total
+                    </div>
+                </div>
+                <div class="workout-item-actions">
+                    <button class="duplicate-workout-btn" data-workout-name="${name}" title="Duplicate this workout">📋</button>
                 </div>
             `;
             
-            workoutItem.addEventListener('click', () => selectWorkout(name, workoutItem));
+            // Click on the main content area to select
+            const contentArea = workoutItem.querySelector('.workout-item-content');
+            contentArea.addEventListener('click', () => selectWorkout(name, workoutItem));
+            
             workoutsList.appendChild(workoutItem);
         });
     }
@@ -453,6 +461,34 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('loadSelectedWorkout').disabled = true;
             document.getElementById('deleteSelectedWorkout').style.display = 'none';
         }
+    }
+    
+    function duplicateWorkout(workoutName) {
+        const workouts = JSON.parse(localStorage.getItem('savedWorkouts') || '{}');
+        if (!workouts[workoutName]) {
+            alert('Workout not found');
+            return;
+        }
+        
+        // Create a copy of the segments
+        const segments = JSON.parse(JSON.stringify(workouts[workoutName]));
+        
+        // Generate a unique name for the duplicate
+        let duplicateName = `${workoutName} (Copy)`;
+        let counter = 2;
+        while (workouts[duplicateName]) {
+            duplicateName = `${workoutName} (Copy ${counter})`;
+            counter++;
+        }
+        
+        // Load the duplicated workout into the builder
+        currentWorkoutSegments = segments;
+        document.getElementById('workoutName').value = duplicateName;
+        document.getElementById('builderTitle').textContent = `Duplicate: ${workoutName}`;
+        workoutModified = true;
+        updateSegmentsList();
+        updateBuilderActions();
+        showScreen('workoutBuilder');
     }
     
     function updateBuilderActions() {
@@ -1104,6 +1140,15 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('backFromLoad').addEventListener('click', () => showScreen('welcome'));
     document.getElementById('loadSelectedWorkout').addEventListener('click', () => loadSelectedWorkout());
     document.getElementById('deleteSelectedWorkout').addEventListener('click', () => deleteSelectedWorkout());
+    
+    // Event delegation for duplicate workout buttons
+    document.getElementById('savedWorkoutsList').addEventListener('click', function(e) {
+        if (e.target.classList.contains('duplicate-workout-btn')) {
+            e.stopPropagation(); // Prevent selecting the workout
+            const workoutName = e.target.getAttribute('data-workout-name');
+            duplicateWorkout(workoutName);
+        }
+    });
     
     // Import workout screen event listeners
     document.getElementById('backFromImport').addEventListener('click', () => showScreen('welcome'));

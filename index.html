@@ -25,6 +25,44 @@
 
     <link rel="stylesheet" href="css/overlay.css" />
     <link rel="stylesheet" href="css/monitor.css" />
+    <style>
+        /* Workout item layout with duplicate button */
+        .workout-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .workout-item-content {
+            flex: 1;
+            cursor: pointer;
+        }
+        
+        .workout-item-actions {
+            display: flex;
+            gap: 5px;
+        }
+        
+        .duplicate-workout-btn {
+            background: #2196F3;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background 0.2s;
+        }
+        
+        .duplicate-workout-btn:hover {
+            background: #1976D2;
+        }
+        
+        .duplicate-workout-btn:active {
+            transform: scale(0.95);
+        }
+    </style>
 </head>
 <body>
     <div class="container">
