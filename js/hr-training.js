@@ -671,6 +671,8 @@ document.addEventListener('DOMContentLoaded', function() {
             div.innerHTML = `
                 ${segmentDescription}
                 <div class="segment-actions">
+                    <button class="move-up-segment" data-index="${index}" ${index === 0 ? 'disabled' : ''}>↑</button>
+                    <button class="move-down-segment" data-index="${index}" ${index === currentWorkoutSegments.length - 1 ? 'disabled' : ''}>↓</button>
                     <button class="edit-segment" data-index="${index}">Edit</button>
                     <button class="remove-segment" data-index="${index}">Remove</button>
                 </div>
@@ -689,6 +691,52 @@ document.addEventListener('DOMContentLoaded', function() {
                 cancelEdit();
             } else if (editingSegmentIndex > index) {
                 editingSegmentIndex--;
+            }
+        }
+        
+        updateSegmentsList();
+        updateBuilderActions();
+    }
+
+    function moveSegmentUp(index) {
+        if (index === 0) return;
+        
+        // Swap with previous segment
+        const temp = currentWorkoutSegments[index];
+        currentWorkoutSegments[index] = currentWorkoutSegments[index - 1];
+        currentWorkoutSegments[index - 1] = temp;
+        
+        workoutModified = true;
+        
+        // Update editing index if needed
+        if (editingSegmentIndex !== null) {
+            if (editingSegmentIndex === index) {
+                editingSegmentIndex = index - 1;
+            } else if (editingSegmentIndex === index - 1) {
+                editingSegmentIndex = index;
+            }
+        }
+        
+        updateSegmentsList();
+        updateBuilderActions();
+    }
+
+    function moveSegmentDown(index) {
+        if (index === currentWorkoutSegments.length - 1) return;
+        
+        // Swap with next segment
+        const temp = currentWorkoutSegments[index];
+        currentWorkoutSegments[index] = currentWorkoutSegments[index + 1];
+        currentWorkoutSegments[index + 1] = temp;
+        
+        workoutModified = true;
+        
+        // Update editing index if needed
+        if (editingSegmentIndex !== null) {
+            if (editingSegmentIndex === index) {
+                editingSegmentIndex = index + 1;
+            } else if (editingSegmentIndex === index + 1) {
+                editingSegmentIndex = index;
             }
         }
         
@@ -1111,7 +1159,7 @@ document.addEventListener('DOMContentLoaded', function() {
         radio.addEventListener('change', toggleTrainingMode);
     });
     
-    // Event delegation for edit and remove segment buttons
+    // Event delegation for segment action buttons
     document.getElementById('segmentsList').addEventListener('click', function(e) {
         if (e.target.classList.contains('remove-segment')) {
             const index = parseInt(e.target.getAttribute('data-index'));
@@ -1119,6 +1167,12 @@ document.addEventListener('DOMContentLoaded', function() {
         } else if (e.target.classList.contains('edit-segment')) {
             const index = parseInt(e.target.getAttribute('data-index'));
             editSegment(index);
+        } else if (e.target.classList.contains('move-up-segment')) {
+            const index = parseInt(e.target.getAttribute('data-index'));
+            moveSegmentUp(index);
+        } else if (e.target.classList.contains('move-down-segment')) {
+            const index = parseInt(e.target.getAttribute('data-index'));
+            moveSegmentDown(index);
         }
     });
     
